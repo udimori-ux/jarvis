@@ -1,0 +1,165 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/><title>Jarvis</title>
+<style>
+:root{--bg:#0d1017;--panel:#161b25;--p2:#1d2330;--line:#2a3140;--ink:#e6ebf2;--mut:#8b97a8;
+--p0:#ef4444;--p1:#f59e0b;--pp2:#3b82f6;--p3:#6b7280;--ok:#22c55e;--rev:#a855f7;--blk:#ef4444;--prog:#f59e0b;--acc:#3b82f6}
+*{box-sizing:border-box}html,body{margin:0;height:100%}body{background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,Segoe UI,Arial}
+#login{height:100%;display:grid;place-items:center}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px;width:330px}
+.card h1{margin:.2em 0 1em;font-size:20px;display:flex;align-items:center;gap:10px}
+.logo{width:32px;height:32px;border-radius:9px;background:radial-gradient(circle at 30% 30%,#3b82f6,#1e3a8a);display:grid;place-items:center;font-weight:800;color:#fff}
+input,textarea{width:100%;background:var(--p2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px 12px;font:inherit;outline:none}
+input:focus,textarea:focus{border-color:var(--acc)}
+button{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+.err{color:#fca5a5;font-size:12.5px;min-height:16px}
+#app{display:none;height:100%;grid-template-rows:auto 1fr;grid-template-columns:1fr 360px;grid-template-areas:"top top" "board chat"}
+header{grid-area:top;display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#11151d,#0d1017)}
+header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
+.spacer{margin-left:auto}.ghost{background:transparent;border:1px solid var(--line);color:var(--mut);font-weight:500;padding:6px 11px}
+#board{grid-area:board;overflow:auto;padding:14px;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;align-items:start}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-height:80px;display:flex;flex-direction:column}
+.col h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin:0;padding:11px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.col .n{color:var(--mut);background:var(--p2);border-radius:20px;padding:0 8px;font-size:11px}
+.drop{padding:10px;display:flex;flex-direction:column;gap:9px;flex:1}.drop.over{background:#3b82f611;outline:1.5px dashed #3b82f655;outline-offset:-6px}
+.tk{background:var(--p2);border:1px solid var(--line);border-left-width:3px;border-radius:9px;padding:9px 10px;cursor:grab}
+.tk:active{cursor:grabbing}.tk .id{color:var(--mut);font-size:10px;font-weight:700;letter-spacing:.4px}
+.tk .t{font-weight:600;margin:2px 0 6px;font-size:13px}.tk .m{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tag{font-size:10px;border-radius:6px;padding:1px 6px;border:1px solid var(--line);color:var(--mut)}
+.P0{background:#ef444422;color:#fca5a5}.P1{background:#f59e0b22;color:#fcd34d}.P2{background:#3b82f622;color:#93c5fd}.P3{background:#6b728022;color:#cbd5e1}
+.own{font-size:10px;color:#7dd3fc;background:#0ea5e918;border:1px solid #0ea5e955;border-radius:20px;padding:0 7px}
+.na{font-size:11px;color:#fca5a5;margin-top:5px}.nt{font-size:11px;color:var(--mut);margin-top:5px}
+.b-blocked{border-left-color:var(--blk)}.b-in_progress{border-left-color:var(--prog)}.b-in_review{border-left-color:var(--rev)}.b-backlog{border-left-color:var(--p3)}.b-done{border-left-color:var(--ok);opacity:.78}
+#chat{grid-area:chat;border-left:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel)}
+#chat h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:0;padding:12px;border-bottom:1px solid var(--line)}
+#msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:90%;padding:8px 11px;border-radius:11px;font-size:13px;white-space:pre-wrap;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.jarvis{align-self:flex-start;background:var(--p2);border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .who{font-size:9.5px;opacity:.6;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px}
+.pending{align-self:flex-start;color:var(--mut);font-size:12px;font-style:italic}
+.compose{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:flex-end}
+.compose textarea{resize:none;height:44px;max-height:140px}
+@media(max-width:820px){#app{grid-template-columns:1fr;grid-template-rows:auto 1fr 40vh;grid-template-areas:"top" "board" "chat"}#chat{border-left:0;border-top:1px solid var(--line)}}
+</style></head><body>
+
+<div id="login">
+  <form class="card" id="loginForm">
+    <h1><span class="logo">J</span> Jarvis</h1>
+    <p style="color:var(--mut);font-size:12.5px;margin-top:0">Your board. Sign in to continue.</p>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <input id="email" type="email" placeholder="email" autocomplete="username"/>
+      <input id="pass" type="password" placeholder="password" autocomplete="current-password"/>
+      <button id="loginBtn" type="submit">Sign in</button>
+      <div class="err" id="loginErr"></div>
+    </div>
+  </form>
+</div>
+
+<div id="app">
+  <header>
+    <span class="logo">J</span>
+    <div><h1>JARVIS</h1><div class="sub">PM · QA · your board — <span id="count"></span></div></div>
+    <span class="spacer"></span>
+    <button class="ghost" id="refreshBtn">↻ Refresh</button>
+    <button class="ghost" id="logoutBtn">Sign out</button>
+  </header>
+  <div id="board"></div>
+  <div id="chat">
+    <h2>Ask Jarvis</h2>
+    <div id="msgs"></div>
+    <form class="compose" id="composeForm">
+      <textarea id="prompt" placeholder="Ask Jarvis or give an instruction… (Enter to send)"></textarea>
+      <button id="sendBtn" type="submit">Send</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://yyagoafmnzvyzhuckomf.supabase.co";
+const ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5YWdvYWZtbnp2eXpodWNrb21mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzQ5OTYsImV4cCI6MjA5ODI1MDk5Nn0.f_cKxXLw2JJ_E5Mf0NThaTahaZqtu-JElu-MDvf0a8s";
+const sb=supabase.createClient(SUPABASE_URL,ANON);
+const COLS=[["blocked","🔴 Blocked / Needs you"],["in_progress","🟡 In Progress"],["in_review","🔵 In Review"],["backlog","⚪ Backlog"],["done","✅ Done"]];
+const $=s=>document.querySelector(s);
+let tickets=[],msgs=[],lastMsgCount=0;
+
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){showApp();} else {$("#login").style.display="grid";$("#app").style.display="none";}
+}
+$("#loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();$("#loginErr").textContent="";$("#loginBtn").disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email:$("#email").value.trim(),password:$("#pass").value});
+  $("#loginBtn").disabled=false;
+  if(error){$("#loginErr").textContent=error.message;} else {showApp();}
+});
+$("#logoutBtn").addEventListener("click",async()=>{await sb.auth.signOut();location.reload();});
+$("#refreshBtn").addEventListener("click",load);
+
+function showApp(){$("#login").style.display="none";$("#app").style.display="grid";load();if(!window._iv)window._iv=setInterval(load,4000);}
+
+async function load(){
+  const [{data:t},{data:m}]=await Promise.all([
+    sb.from("jarvis_tickets").select("*").order("status").order("sort"),
+    sb.from("jarvis_messages").select("*").order("created_at"),
+  ]);
+  if(t)tickets=t; if(m)msgs=m;
+  renderBoard(); renderChat();
+}
+
+function renderBoard(){
+  const b=$("#board");b.innerHTML="";
+  let open=0;
+  COLS.forEach(([key,label])=>{
+    const items=tickets.filter(x=>x.status===key);
+    if(key!=="done")open+=items.length;
+    const col=document.createElement("section");col.className="col";
+    col.innerHTML=`<h2>${label}<span class="n">${items.length}</span></h2>`;
+    const drop=document.createElement("div");drop.className="drop";drop.dataset.status=key;
+    drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});
+    drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+    drop.addEventListener("drop",async e=>{e.preventDefault();drop.classList.remove("over");
+      const id=e.dataTransfer.getData("text");if(!id)return;
+      const tk=tickets.find(x=>x.id===id);if(tk&&tk.status!==key){tk.status=key;renderBoard();
+        await sb.from("jarvis_tickets").update({status:key,updated_at:new Date().toISOString()}).eq("id",id);
+        await sb.from("jarvis_messages").insert({role:"user",content:`[board] moved ${id} → ${key}`,ticket_id:id,handled:true});
+      }});
+    items.forEach(tk=>{
+      const c=document.createElement("div");c.className=`tk b-${key}`;c.draggable=true;
+      c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",tk.id));
+      c.addEventListener("click",()=>{$("#prompt").value=`About ${tk.id} (${tk.title}): `;$("#prompt").focus();});
+      c.innerHTML=`<div class="id">${tk.id} · ${tk.product||""}</div><div class="t">${esc(tk.title)}</div>
+        <div class="m"><span class="tag ${tk.priority}">${tk.priority}</span>${tk.owner?`<span class="own">${esc(tk.owner)}</span>`:""}</div>
+        ${tk.next_action?`<div class="na">▸ ${esc(tk.next_action)}</div>`:""}${tk.note?`<div class="nt">${esc(tk.note)}</div>`:""}`;
+      drop.appendChild(c);
+    });
+    col.appendChild(drop);b.appendChild(col);
+  });
+  $("#count").textContent=`${open} open · ${tickets.length} total`;
+}
+
+function renderChat(){
+  const box=$("#msgs");const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+  box.innerHTML="";
+  msgs.filter(m=>!(m.content||"").startsWith("[board]")).forEach(m=>{
+    const d=document.createElement("div");d.className="msg "+(m.role==="user"?"user":"jarvis");
+    d.innerHTML=`<div class="who">${m.role==="user"?"You":"Jarvis"}</div>${esc(m.content)}`;
+    box.appendChild(d);
+  });
+  const unhandled=msgs.some(m=>m.role==="user"&&!m.handled&&!(m.content||"").startsWith("[board]"));
+  if(unhandled){const p=document.createElement("div");p.className="pending";p.textContent="Jarvis is on it… (answers when your Jarvis terminal picks it up)";box.appendChild(p);}
+  if(atBottom||msgs.length!==lastMsgCount)box.scrollTop=box.scrollHeight;
+  lastMsgCount=msgs.length;
+}
+
+$("#composeForm").addEventListener("submit",send);
+$("#prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send(e);}});
+async function send(e){e.preventDefault();const v=$("#prompt").value.trim();if(!v)return;
+  $("#prompt").value="";$("#sendBtn").disabled=true;
+  await sb.from("jarvis_messages").insert({role:"user",content:v,handled:false});
+  $("#sendBtn").disabled=false;await load();}
+
+function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+boot();
+</script></body></html>
