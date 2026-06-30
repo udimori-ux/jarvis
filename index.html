@@ -217,7 +217,7 @@ function renderChat(){
   box.innerHTML="";
   msgs.filter(m=>!(m.content||"").startsWith("[board]")).forEach(m=>{
     const d=document.createElement("div");d.className="msg "+(m.role==="user"?"user":"jarvis");
-    d.innerHTML=`<div class="who">${m.role==="user"?"You":"Jarvis"}</div><div class="mc">${esc(m.content)}</div><div class="mact"><button class="mbtn" data-act="read">🔊 Read</button><button class="mbtn" data-act="copy">⧉ Copy</button></div>`;
+    d.innerHTML=`<div class="who">${m.role==="user"?"You":"Jarvis"}</div><div class="mc">${esc(m.content)}</div><div class="mact"><button class="mbtn" data-act="reply">↩ Reply</button><button class="mbtn" data-act="read">🔊 Read</button><button class="mbtn" data-act="copy">⧉ Copy</button></div>`;
     box.appendChild(d);
   });
   const unhandled=msgs.some(m=>m.role==="user"&&!m.handled&&!(m.content||"").startsWith("[board]"));
@@ -243,6 +243,7 @@ $("#micBtn").addEventListener("click",()=>{
 $("#msgs").addEventListener("click",e=>{
   const btn=e.target.closest(".mbtn");if(!btn)return;
   const txt=btn.closest(".msg").querySelector(".mc").textContent;
+  if(btn.dataset.act==="reply"){const s=txt.slice(0,55).replace(/\s+/g," ");$("#prompt").value=`↳ Re "${s}${txt.length>55?"…":""}": `;$("#prompt").focus();return;}
   if(btn.dataset.act==="read"){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt.replace(/https?:\/\/\S+/g,"link"));u.rate=1.03;speechSynthesis.speak(u);}catch(_){}}
   else{const done=()=>{const o=btn.textContent;btn.textContent="✓ Copied";setTimeout(()=>btn.textContent=o,1200);};
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>selFallback(btn));}else selFallback(btn);}
