@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>JB-48 · Contacts Kanban — preview</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1d2433;--mut:#6b7589;--line:#e3e8f0;--acc:#2563eb;
+--new:#64748b;--cont:#0ea5e9;--qual:#8b5cf6;--prop:#f59e0b;--neg:#ec4899;--won:#16a34a;--lost:#ef4444}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,Segoe UI,Arial}
+.wrap{max-width:1200px;margin:0 auto;padding:22px 16px 40px}
+.hd{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.badge{background:#dbeafe;color:#1e40af;font-weight:800;font-size:12px;padding:3px 9px;border-radius:7px;letter-spacing:.4px}
+h1{font-size:22px;margin:0}
+.lead{color:var(--mut);font-size:14px;margin:6px 0 4px;max-width:760px}
+.note{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;padding:10px 13px;font-size:13px;margin:14px 0 18px}
+.note b{color:#1e3a8a}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.toggle span{padding:7px 14px;font-size:13px;font-weight:600;color:var(--mut)}
+.toggle .on{background:var(--acc);color:#fff}
+.search{flex:1;min-width:160px;max-width:280px;border:1px solid var(--line);border-radius:9px;padding:7px 11px;background:#fff;color:var(--mut)}
+.pill{font-size:11px;border:1px solid var(--line);border-radius:20px;padding:3px 10px;color:var(--mut);background:#fff}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:248px;gap:13px;overflow-x:auto;padding-bottom:10px;align-items:start}
+.col{background:#eef1f6;border:1px solid var(--line);border-radius:13px;display:flex;flex-direction:column;max-height:74vh}
+.ch{display:flex;align-items:center;gap:8px;padding:11px 13px;font-weight:700;font-size:13px;border-bottom:1px solid var(--line)}
+.dot{width:9px;height:9px;border-radius:50%}
+.ch .n{margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:0 8px;font-size:11px;color:var(--mut);font-weight:600}
+.cards{padding:10px;display:flex;flex-direction:column;gap:9px;overflow-y:auto}
+.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 11px;box-shadow:0 1px 2px #0b132010;cursor:grab;position:relative}
+.c:hover{box-shadow:0 4px 12px #0b132018;transform:translateY(-1px);transition:.12s}
+.c .nm{font-weight:700;font-size:13.5px}
+.c .co{color:var(--mut);font-size:12px;margin-top:1px}
+.c .row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.val{font-weight:700;font-size:12.5px;color:#0f172a}
+.last{margin-left:auto;color:#94a3b8;font-size:11px}
+.grip{position:absolute;top:9px;right:10px;color:#cbd5e1;font-size:13px;letter-spacing:1px}
+.empty{color:#94a3b8;font-size:12px;font-style:italic;padding:14px 10px}
+.more{color:var(--acc);font-size:12px;font-weight:600;padding:6px 4px;cursor:pointer}
+.foot{margin-top:22px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+.foot code{background:#eef1f6;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
+.b-new{border-top:3px solid var(--new)}.b-cont{border-top:3px solid var(--cont)}.b-qual{border-top:3px solid var(--qual)}
+.b-prop{border-top:3px solid var(--prop)}.b-neg{border-top:3px solid var(--neg)}.b-won{border-top:3px solid var(--won)}.b-lost{border-top:3px solid var(--lost)}
+</style></head><body>
+<div class="wrap">
+  <div class="hd"><span class="badge">JB-48</span><h1>Contacts Kanban — Lead-Stage Board</h1></div>
+  <p class="lead">A visual <b>Board view inside Contacts</b> that replaces the removed Sales Pipeline. Toggle between <b>List</b> and <b>Board</b>; the board groups every contact by its <b>lead stage</b> and you <b>drag a card</b> to move it between stages (updates <code>lead_stage</code> live). Respects the existing search + Clients/Prospects filter.</p>
+  <div class="note">📌 This is a <b>visual preview/mockup</b> of the idea (sample data). It's already <b>live in the CRM</b> → <b>crm.goldenstatecctv.com → Contacts → "Board" toggle</b>. Drag-to-move is wired the same way as the proven Orders board.</div>
+
+  <div class="toolbar">
+    <span class="toggle"><span>List</span><span class="on">Board</span></span>
+    <span class="search">🔎 Search contacts…</span>
+    <span class="pill">All</span><span class="pill">Clients</span><span class="pill">Prospects</span>
+  </div>
+
+  <div class="board">
+    <section class="col"><div class="ch"><span class="dot" style="background:var(--new)"></span>New<span class="n">3</span></div><div class="cards">
+      <div class="c b-new"><span class="grip">⋮⋮</span><div class="nm">Charles Curtis</div><div class="co">Acme Logistics</div><div class="row"><span class="val">$6,500</span><span class="last">2d ago</span></div></div>
+      <div class="c b-new"><span class="grip">⋮⋮</span><div class="nm">Maria Lopez</div><div class="co">Sunray Plaza</div><div class="row"><span class="val">$12,000</span><span class="last">1d ago</span></div></div>
+      <div class="c b-new"><span class="grip">⋮⋮</span><div class="nm">Tom Becker</div><div class="co">— individual —</div><div class="row"><span class="val">$2,200</span><span class="last">5h ago</span></div></div>
+    </div></section>
+
+    <section class="col"><div class="ch"><span class="dot" style="background:var(--cont)"></span>Contacted<span class="n">2</span></div><div class="cards">
+      <div class="c b-cont"><span class="grip">⋮⋮</span><div class="nm">Priya Nair</div><div class="co">Westfield Dental</div><div class="row"><span class="val">$8,400</span><span class="last">3d ago</span></div></div>
+      <div class="c b-cont"><span class="grip">⋮⋮</span><div class="nm">Greg Olsen</div><div class="co">Harbor Storage</div><div class="row"><span class="val">$15,900</span><span class="last">6d ago</span></div></div>
+    </div></section>
+
+    <section class="col"><div class="ch"><span class="dot" style="background:var(--qual)"></span>Qualified<span class="n">1</span></div><div class="cards">
+      <div class="c b-qual"><span class="grip">⋮⋮</span><div class="nm">Dana White</div><div class="co">Lincoln Medical</div><div class="row"><span class="val">$22,000</span><span class="last">today</span></div></div>
+    </div></section>
+
+    <section class="col"><div class="ch"><span class="dot" style="background:var(--prop)"></span>Proposal<span class="n">1</span></div><div class="cards">
+      <div class="c b-prop"><span class="grip">⋮⋮</span><div class="nm">Raj Patel</div><div class="co">Five Star Hotel</div><div class="row"><span class="val">$48,000</span><span class="last">1d ago</span></div></div>
+    </div></section>
+
+    <section class="col"><div class="ch"><span class="dot" style="background:var(--neg)"></span>Negotiation<span class="n">1</span></div><div class="cards">
+      <div class="c b-neg"><span class="grip">⋮⋮</span><div class="nm">Sofia Marin</div><div class="co">Brightline Bank</div><div class="row"><span class="val">$67,500</span><span class="last">4h ago</span></div></div>
+    </div></section>
+
+    <section class="col"><div class="ch"><span class="dot" style="background:var(--won)"></span>Won<span class="n">10</span></div><div class="cards">
+      <div class="c b-won"><span class="grip">⋮⋮</span><div class="nm">Antonio Perez</div><div class="co">Pacific Foods</div><div class="row"><span class="val">$31,000</span><span class="last">won</span></div></div>
+      <div class="c b-won"><span class="grip">⋮⋮</span><div class="nm">Lena Cho</div><div class="co">Riverside Apts</div><div class="row"><span class="val">$19,800</span><span class="last">won</span></div></div>
+      <div class="c b-won"><span class="grip">⋮⋮</span><div class="nm">Mike Russo</div><div class="co">Downtown Deli</div><div class="row"><span class="val">$7,400</span><span class="last">won</span></div></div>
+      <div class="more">+ 7 more won…</div>
+    </div></section>
+
+    <section class="col"><div class="ch"><span class="dot" style="background:var(--lost)"></span>Lost<span class="n">0</span></div><div class="cards">
+      <div class="empty">No lost contacts 🎉</div>
+    </div></section>
+  </div>
+
+  <div class="foot">How it works: a <b>List ⇄ Board</b> toggle on the Contacts page. Board mode renders one column per <code>lead_stage</code> (New · Contacted · Qualified · Proposal · Negotiation · Won · Lost) from your real contacts; <b>drag a card</b> to a new column and it updates that contact's stage instantly. Clicking a card opens the contact. — Jarvis preview of JB-48</div>
+</div>
+</body></html>
