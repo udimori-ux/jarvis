@@ -13,10 +13,21 @@ input:focus,textarea:focus{border-color:var(--acc)}
 button{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer}
 button:disabled{opacity:.5;cursor:default}
 .err{color:#fca5a5;font-size:12.5px;min-height:16px}
-#app{display:none;height:100%;grid-template-rows:auto 1fr;grid-template-columns:1fr 360px;grid-template-areas:"top top" "board chat"}
+#app{display:none;height:100%;grid-template-rows:auto auto 1fr;grid-template-columns:1fr 360px;grid-template-areas:"top top" "pending pending" "board chat"}
 header{grid-area:top;display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#11151d,#0d1017)}
 header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 .spacer{margin-left:auto}.ghost{background:transparent;border:1px solid var(--line);color:var(--mut);font-weight:500;padding:6px 11px}
+.ghost.active{color:#7dd3fc;border-color:#0ea5e9}
+/* pending-for-you panel */
+#pending{grid-area:pending;display:none;background:linear-gradient(180deg,#1a1510,#161b25);border-bottom:1px solid var(--line);padding:10px 14px}
+#pending .ph{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#fcd34d;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+#pending .ph .n{background:#f59e0b22;color:#fcd34d;border-radius:20px;padding:0 8px;font-size:11px}
+#pending .pq{display:flex;gap:9px;overflow-x:auto;padding-bottom:2px}
+.qcard{flex:0 0 auto;width:230px;text-align:left;background:var(--p2);border:1px solid #f59e0b55;border-left:3px solid var(--p1);border-radius:9px;padding:8px 10px;color:var(--ink);font:inherit;cursor:pointer}
+.qcard .qid{color:var(--mut);font-size:10px;font-weight:700;letter-spacing:.4px}
+.qcard .qt{font-weight:600;font-size:12.5px;margin:2px 0 4px;white-space:normal}
+.qcard .qa{font-size:11px;color:var(--mut);white-space:normal}
+.qcard .qans{font-size:10.5px;color:#fcd34d;margin-top:5px}
 #board{grid-area:board;overflow:auto;padding:14px;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;align-items:start}
 .col{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-height:80px;display:flex;flex-direction:column}
 .col h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin:0;padding:11px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
@@ -31,7 +42,7 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 .na{font-size:11px;color:#fca5a5;margin-top:5px}.nt{font-size:11px;color:var(--mut);margin-top:5px}
 .b-blocked{border-left-color:var(--blk)}.b-in_progress{border-left-color:var(--prog)}.b-in_review{border-left-color:var(--rev)}.b-backlog{border-left-color:var(--p3)}.b-done{border-left-color:var(--ok);opacity:.78}
 #chat{grid-area:chat;border-left:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel)}
-#chat h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:0;padding:12px;border-bottom:1px solid var(--line)}
+#chat h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:0;padding:12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
 #msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 .msg{max-width:90%;padding:8px 11px;border-radius:11px;font-size:13px;white-space:pre-wrap;word-wrap:break-word}
 .msg.user{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
@@ -40,7 +51,11 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 .pending{align-self:flex-start;color:var(--mut);font-size:12px;font-style:italic}
 .compose{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:flex-end}
 .compose textarea{resize:none;height:44px;max-height:140px}
-@media(max-width:820px){#app{grid-template-columns:1fr;grid-template-rows:auto 1fr 40vh;grid-template-areas:"top" "board" "chat"}#chat{border-left:0;border-top:1px solid var(--line)}}
+.iconbtn{background:var(--p2);border:1px solid var(--line);color:var(--mut);border-radius:9px;padding:10px 13px;font-size:17px;line-height:1}
+.iconbtn.rec{background:#ef444422;border-color:#ef4444;color:#fca5a5;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.45}}
+.tts{font-size:11px;padding:5px 9px}
+@media(max-width:820px){#app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr 42vh;grid-template-areas:"top" "pending" "board" "chat"}#chat{border-left:0;border-top:1px solid var(--line)}}
 </style></head><body>
 
 <div id="login">
@@ -61,15 +76,18 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
     <span class="logo">J</span>
     <div><h1>JARVIS</h1><div class="sub">PM · QA · your board — <span id="count"></span></div></div>
     <span class="spacer"></span>
+    <button class="ghost tts" id="ttsBtn" title="Read Jarvis replies aloud">🔇 Read: Off</button>
     <button class="ghost" id="refreshBtn">↻ Refresh</button>
     <button class="ghost" id="logoutBtn">Sign out</button>
   </header>
+  <div id="pending"></div>
   <div id="board"></div>
   <div id="chat">
-    <h2>Ask Jarvis</h2>
+    <h2><span>Ask Jarvis</span></h2>
     <div id="msgs"></div>
     <form class="compose" id="composeForm">
-      <textarea id="prompt" placeholder="Ask Jarvis or give an instruction… (Enter to send)"></textarea>
+      <button class="iconbtn" id="micBtn" type="button" title="Hold-free voice: tap to talk, tap to stop">🎤</button>
+      <textarea id="prompt" placeholder="Ask Jarvis or 🎤 tap to talk… (Enter to send)"></textarea>
       <button id="sendBtn" type="submit">Send</button>
     </form>
   </div>
@@ -105,7 +123,22 @@ async function load(){
     sb.from("jarvis_messages").select("*").order("created_at"),
   ]);
   if(t)tickets=t; if(m)msgs=m;
-  renderBoard(); renderChat();
+  renderPending(); renderBoard(); renderChat();
+}
+
+function renderPending(){
+  const wrap=$("#pending");
+  const items=tickets.filter(x=>x.status==="blocked");
+  if(!items.length){wrap.style.display="none";wrap.innerHTML="";return;}
+  wrap.style.display="block";
+  wrap.innerHTML=`<div class="ph">⏳ Pending your answer <span class="n">${items.length}</span></div><div class="pq"></div>`;
+  const pq=wrap.querySelector(".pq");
+  items.forEach(t=>{
+    const b=document.createElement("button");b.className="qcard";
+    b.innerHTML=`<div class="qid">${t.id} · ${esc(t.product||"")}</div><div class="qt">${esc(t.title)}</div>${t.next_action?`<div class="qa">▸ ${esc(t.next_action)}</div>`:(t.note?`<div class="qa">${esc(t.note)}</div>`:"")}<div class="qans">Tap to answer →</div>`;
+    b.addEventListener("click",()=>{$("#prompt").value=`Re ${t.id} (${t.title}): `;$("#prompt").focus();});
+    pq.appendChild(b);
+  });
 }
 
 function renderBoard(){
@@ -121,7 +154,7 @@ function renderBoard(){
     drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
     drop.addEventListener("drop",async e=>{e.preventDefault();drop.classList.remove("over");
       const id=e.dataTransfer.getData("text");if(!id)return;
-      const tk=tickets.find(x=>x.id===id);if(tk&&tk.status!==key){tk.status=key;renderBoard();
+      const tk=tickets.find(x=>x.id===id);if(tk&&tk.status!==key){tk.status=key;renderPending();renderBoard();
         await sb.from("jarvis_tickets").update({status:key,updated_at:new Date().toISOString()}).eq("id",id);
         await sb.from("jarvis_messages").insert({role:"user",content:`[board] moved ${id} → ${key}`,ticket_id:id,handled:true});
       }});
@@ -139,6 +172,16 @@ function renderBoard(){
   $("#count").textContent=`${open} open · ${tickets.length} total`;
 }
 
+/* ---- read-aloud (TTS) ---- */
+let ttsOn=localStorage.getItem("tts")==="1";
+const spoken=new Set();let ttsPrimed=false;
+function updateTtsBtn(){const b=$("#ttsBtn");b.classList.toggle("active",ttsOn);b.textContent=ttsOn?"🔊 Read: On":"🔇 Read: Off";}
+$("#ttsBtn").addEventListener("click",()=>{ttsOn=!ttsOn;localStorage.setItem("tts",ttsOn?"1":"0");
+  if(!ttsOn){try{speechSynthesis.cancel();}catch(e){}}updateTtsBtn();});
+function speakNew(){if(!ttsOn||!("speechSynthesis"in window))return;
+  msgs.filter(m=>m.role==="jarvis"&&!spoken.has(m.id)).forEach(m=>{spoken.add(m.id);
+    try{const u=new SpeechSynthesisUtterance((m.content||"").replace(/https?:\/\/\S+/g,"link"));u.rate=1.03;speechSynthesis.speak(u);}catch(e){}});}
+
 function renderChat(){
   const box=$("#msgs");const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
   box.innerHTML="";
@@ -148,18 +191,34 @@ function renderChat(){
     box.appendChild(d);
   });
   const unhandled=msgs.some(m=>m.role==="user"&&!m.handled&&!(m.content||"").startsWith("[board]"));
-  if(unhandled){const p=document.createElement("div");p.className="pending";p.textContent="Jarvis is on it… (answers when your Jarvis terminal picks it up)";box.appendChild(p);}
+  if(unhandled){const p=document.createElement("div");p.className="pending";p.textContent="Jarvis is on it…";box.appendChild(p);}
   if(atBottom||msgs.length!==lastMsgCount)box.scrollTop=box.scrollHeight;
   lastMsgCount=msgs.length;
+  if(!ttsPrimed){msgs.filter(m=>m.role==="jarvis").forEach(m=>spoken.add(m.id));ttsPrimed=true;} else {speakNew();}
 }
+
+/* ---- voice-to-text (STT) ---- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,recording=false;
+$("#micBtn").addEventListener("click",()=>{
+  if(!SR){alert("Voice input isn’t supported on this browser — type instead. (On iPhone this can be hit-or-miss.)");return;}
+  if(recording){try{rec.stop();}catch(e){}return;}
+  rec=new SR();rec.lang="en-US";rec.interimResults=true;rec.continuous=false;let fin="";
+  rec.onstart=()=>{recording=true;$("#micBtn").classList.add("rec");};
+  rec.onerror=()=>{recording=false;$("#micBtn").classList.remove("rec");};
+  rec.onend=()=>{recording=false;$("#micBtn").classList.remove("rec");$("#prompt").focus();};
+  rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const tr=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=tr+" ";else interim+=tr;}$("#prompt").value=(fin+interim).trim();};
+  try{rec.start();}catch(e){}
+});
 
 $("#composeForm").addEventListener("submit",send);
 $("#prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send(e);}});
 async function send(e){e.preventDefault();const v=$("#prompt").value.trim();if(!v)return;
+  if(recording){try{rec.stop();}catch(e){}}
   $("#prompt").value="";$("#sendBtn").disabled=true;
   await sb.from("jarvis_messages").insert({role:"user",content:v,handled:false});
   $("#sendBtn").disabled=false;await load();}
 
 function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+updateTtsBtn();
 boot();
 </script></body></html>
