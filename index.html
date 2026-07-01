@@ -82,7 +82,27 @@ body.speaking #ttsStop{display:inline-flex;align-items:center}
 .iconbtn.rec{background:#ef444422;border-color:#ef4444;color:#fca5a5;animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.45}}
 .tts{font-size:11px;padding:5px 9px}
-@media(max-width:560px){.tabs{margin-left:0}.tab{padding:6px 8px}.tab .lbl{display:none}}
+@media(max-width:820px){
+  header{padding:10px 12px;gap:8px}
+  header h1{font-size:15px}header .sub{display:none}
+  #chat{max-height:48vh}
+  .compose textarea{min-height:54px}
+}
+@media(max-width:560px){
+  header{flex-wrap:wrap;gap:6px 8px}
+  .tabs{margin-left:0;order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  .tab{padding:6px 10px;flex:0 0 auto}.tab .lbl{display:none}
+  .spacer{display:none}
+  .ghost{padding:5px 8px;font-size:11px}
+  #refreshBtn{display:none} /* redundant on phone — the board auto-polls every 4s */
+  #brandImg{height:22px}
+  .msg{max-width:94%;font-size:13.5px}
+  #msgs{padding:10px;gap:8px}
+  .compose{padding:8px;gap:6px}.compose textarea{min-height:46px;padding:9px 11px}
+  .iconbtn{padding:9px 12px}
+  #board{padding:10px;gap:10px}
+  #chat h2{padding:10px}
+}
 /* change-password modal */
 #pwModal{display:none;position:fixed;inset:0;z-index:50;background:rgba(6,9,14,.72);place-items:center;padding:16px}
 #pwModal.on{display:grid}
@@ -473,17 +493,37 @@ function renderBoard(){
 /* ---- read-aloud (TTS) ---- */
 let ttsOn=localStorage.getItem("tts")==="1";
 const spoken=new Set();let ttsPrimed=false;
-/* ---- shared, STOPPABLE text-to-speech ---- */
+/* ---- shared, STOPPABLE text-to-speech (voice-picked + autoplay-unlocked) ---- */
+let _voice=null,_audioUnlocked=false;
+function pickVoice(){
+  if(!("speechSynthesis"in window))return null;
+  const vs=speechSynthesis.getVoices()||[];if(!vs.length)return null;
+  // prefer clear, natural English voices over the robotic default
+  const prefs=[/Google US English/i,/Microsoft.*(Aria|Jenny|Ava|Michelle|Emma|Guy).*(Online|Natural)/i,/Samantha/i,/Google UK English Female/i,/Microsoft.*(Zira|David)/i,/en[-_]US/i,/\ben\b|English/i];
+  for(const p of prefs){const m=vs.find(v=>p.test(v.name)||p.test(v.lang));if(m)return m;}
+  return vs[0];
+}
+function ensureVoice(){if(!_voice)_voice=pickVoice();return _voice;}
+if("speechSynthesis"in window){speechSynthesis.onvoiceschanged=()=>{_voice=pickVoice();};setTimeout(ensureVoice,300);}
 function reflectSpeaking(){try{document.body.classList.toggle("speaking",("speechSynthesis"in window)&&(speechSynthesis.speaking||speechSynthesis.pending));}catch(e){}}
 function stopSpeak(){try{speechSynthesis.cancel();}catch(e){}reflectSpeaking();}
-function mkUtter(text){const u=new SpeechSynthesisUtterance((text||"").replace(/https?:\/\/\S+/g,"link"));u.rate=1.03;u.onstart=reflectSpeaking;u.onend=()=>setTimeout(reflectSpeaking,60);u.onerror=()=>setTimeout(reflectSpeaking,60);return u;}
+function mkUtter(text){const u=new SpeechSynthesisUtterance((text||"").replace(/https?:\/\/\S+/g,"link").replace(/[*_#`>]/g,""));const v=ensureVoice();if(v){u.voice=v;u.lang=v.lang;}u.rate=.96;u.pitch=1;u.volume=1;u.onstart=reflectSpeaking;u.onend=()=>setTimeout(reflectSpeaking,60);u.onerror=()=>setTimeout(reflectSpeaking,60);return u;}
 function speak(text){if(!("speechSynthesis"in window))return;try{speechSynthesis.cancel();speechSynthesis.speak(mkUtter(text));reflectSpeaking();}catch(e){}}
+// Browsers block speechSynthesis until a user gesture. Unlock on the first tap/click anywhere so
+// a persisted "Read: On" actually auto-plays new replies (this was the "toggle on but silent" bug).
+function unlockAudio(){if(_audioUnlocked||!("speechSynthesis"in window))return;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u);_audioUnlocked=true;}catch(e){}}
+window.addEventListener("pointerdown",()=>{ensureVoice();unlockAudio();});
 function updateTtsBtn(){const b=$("#ttsBtn");b.classList.toggle("active",ttsOn);b.textContent=ttsOn?"🔊 Read: On":"🔇 Read: Off";}
 $("#ttsBtn").addEventListener("click",()=>{ttsOn=!ttsOn;localStorage.setItem("tts",ttsOn?"1":"0");
-  if(!ttsOn){stopSpeak();}updateTtsBtn();});
+  if(ttsOn){unlockAudio();ensureVoice();
+    // this click IS the gesture — read the latest reply now so the voice is confirmed immediately
+    const last=[...msgs].reverse().find(m=>m.role==="jarvis"&&!(m.content||"").startsWith("[board]"));
+    if(last){spoken.add(last.id);speak(last.content);}
+  } else {stopSpeak();}
+  updateTtsBtn();});
 $("#ttsStop").addEventListener("click",stopSpeak);
 function speakNew(){if(!ttsOn||!("speechSynthesis"in window))return;
-  msgs.filter(m=>m.role==="jarvis"&&!spoken.has(m.id)).forEach(m=>{spoken.add(m.id);
+  msgs.filter(m=>m.role==="jarvis"&&!spoken.has(m.id)&&!(m.content||"").startsWith("[board]")).forEach(m=>{spoken.add(m.id);
     try{speechSynthesis.speak(mkUtter(m.content));}catch(e){}});reflectSpeaking();}
 
 function renderChat(){
