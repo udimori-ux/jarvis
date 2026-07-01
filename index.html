@@ -65,6 +65,10 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 .mact{display:flex;gap:6px;margin-top:6px}
 .mbtn{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:7px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer}
 .msg.user .mbtn{border-color:#ffffff66;color:#eef}
+#ttsStop{display:none;color:#fca5a5;border-color:#ef444455}
+#ttsStop:hover{background:#ef444422;color:#fecaca}
+body.speaking #ttsStop{display:inline-flex;align-items:center}
+.ag-act{margin-top:2px;padding-top:9px;border-top:1px solid var(--line)}
 .pending{align-self:flex-start;color:var(--mut);font-size:12px;font-style:italic}
 .compose{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:flex-end}
 .compose textarea{resize:none;min-height:88px;max-height:260px;line-height:1.45;padding:12px 14px}
@@ -219,6 +223,7 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
     </div>
     <span class="spacer"></span>
     <button class="ghost tts" id="ttsBtn" title="Read Jarvis replies aloud">🔇 Read: Off</button>
+    <button class="ghost" id="ttsStop" title="Stop reading">⏹ Stop</button>
     <button class="ghost" id="refreshBtn">↻ Refresh</button>
     <button class="ghost" id="pwBtn" title="Change password">⚙︎</button>
     <button class="ghost" id="logoutBtn">Sign out</button>
@@ -367,6 +372,7 @@ document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click
           ${a.blocked_on?`<div class="ag-block">⛔ Blocked on: ${esc(a.blocked_on)}</div>`:''}
           ${upd?`<div class="ag-upd">updated ${esc(upd)}</div>`:''}
         </div>
+        <div class="mact ag-act"><button class="mbtn" data-aact="reply">↩ Reply</button><button class="mbtn" data-aact="read">🔊 Read</button><button class="mbtn" data-aact="copy">⧉ Copy</button></div>
       </div>`;
     }).join("");
     wrap.innerHTML=`<div class="ag-wrap">
@@ -374,6 +380,19 @@ document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click
       <div class="ag-cols">${cols||'<p class="ag-err">No agents yet.</p>'}</div>
     </div>`;
   }
+  // agent-card action buttons (delegated — #agents container is stable across re-renders)
+  $("#agents").addEventListener("click",e=>{
+    const btn=e.target.closest(".ag-act .mbtn");if(!btn)return;
+    const col=btn.closest(".ag-col");if(!col)return;
+    const name=(col.querySelector(".ag-name")?.textContent||"").trim();
+    const task=(col.querySelector(".ag-task")?.textContent||"").trim();
+    const cardText=name+" — "+task;
+    const act=btn.dataset.aact;
+    if(act==="reply"){$("#prompt").value=`re: ${name} - ${task}: `;$("#prompt").focus();if(typeof autoGrowPrompt==="function")autoGrowPrompt();return;}
+    if(act==="read"){speak(cardText);return;}
+    const done=()=>{const o=btn.textContent;btn.textContent="✓ Copied";setTimeout(()=>btn.textContent=o,1200);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(cardText).then(done).catch(done);}else done();
+  });
   window._agentsInit=function(){ render(); if(!timer)timer=setInterval(()=>{ if($("#app").getAttribute("data-view")==="agents")render(); },15000); };
 })();
 
@@ -444,12 +463,18 @@ function renderBoard(){
 /* ---- read-aloud (TTS) ---- */
 let ttsOn=localStorage.getItem("tts")==="1";
 const spoken=new Set();let ttsPrimed=false;
+/* ---- shared, STOPPABLE text-to-speech ---- */
+function reflectSpeaking(){try{document.body.classList.toggle("speaking",("speechSynthesis"in window)&&(speechSynthesis.speaking||speechSynthesis.pending));}catch(e){}}
+function stopSpeak(){try{speechSynthesis.cancel();}catch(e){}reflectSpeaking();}
+function mkUtter(text){const u=new SpeechSynthesisUtterance((text||"").replace(/https?:\/\/\S+/g,"link"));u.rate=1.03;u.onstart=reflectSpeaking;u.onend=()=>setTimeout(reflectSpeaking,60);u.onerror=()=>setTimeout(reflectSpeaking,60);return u;}
+function speak(text){if(!("speechSynthesis"in window))return;try{speechSynthesis.cancel();speechSynthesis.speak(mkUtter(text));reflectSpeaking();}catch(e){}}
 function updateTtsBtn(){const b=$("#ttsBtn");b.classList.toggle("active",ttsOn);b.textContent=ttsOn?"🔊 Read: On":"🔇 Read: Off";}
 $("#ttsBtn").addEventListener("click",()=>{ttsOn=!ttsOn;localStorage.setItem("tts",ttsOn?"1":"0");
-  if(!ttsOn){try{speechSynthesis.cancel();}catch(e){}}updateTtsBtn();});
+  if(!ttsOn){stopSpeak();}updateTtsBtn();});
+$("#ttsStop").addEventListener("click",stopSpeak);
 function speakNew(){if(!ttsOn||!("speechSynthesis"in window))return;
   msgs.filter(m=>m.role==="jarvis"&&!spoken.has(m.id)).forEach(m=>{spoken.add(m.id);
-    try{const u=new SpeechSynthesisUtterance((m.content||"").replace(/https?:\/\/\S+/g,"link"));u.rate=1.03;speechSynthesis.speak(u);}catch(e){}});}
+    try{speechSynthesis.speak(mkUtter(m.content));}catch(e){}});reflectSpeaking();}
 
 function renderChat(){
   const box=$("#msgs");const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
@@ -483,7 +508,7 @@ $("#msgs").addEventListener("click",e=>{
   const btn=e.target.closest(".mbtn");if(!btn)return;
   const txt=btn.closest(".msg").querySelector(".mc").textContent;
   if(btn.dataset.act==="reply"){const s=txt.slice(0,55).replace(/\s+/g," ");$("#prompt").value=`↳ Re "${s}${txt.length>55?"…":""}": `;$("#prompt").focus();return;}
-  if(btn.dataset.act==="read"){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt.replace(/https?:\/\/\S+/g,"link"));u.rate=1.03;speechSynthesis.speak(u);}catch(_){}}
+  if(btn.dataset.act==="read"){speak(txt);}
   else{const done=()=>{const o=btn.textContent;btn.textContent="✓ Copied";setTimeout(()=>btn.textContent=o,1200);};
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>selFallback(btn));}else selFallback(btn);}
 });
