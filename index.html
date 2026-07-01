@@ -527,7 +527,7 @@ function speakNew(){if(!ttsOn||!("speechSynthesis"in window))return;
   msgs.filter(m=>m.role==="jarvis"&&!spoken.has(m.id)&&!(m.content||"").startsWith("[board]")).forEach(m=>{spoken.add(m.id);
     try{speechSynthesis.speak(mkUtter(m.content));}catch(e){}});reflectSpeaking();}
 
-function fmtTime(ts){ if(!ts)return""; try{ const d=new Date(ts),now=new Date(); const t=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}); return d.toDateString()===now.toDateString()? t : d.toLocaleDateString([],{month:"short",day:"numeric"})+" "+t; }catch(e){return"";} }
+function fmtTime(ts){ if(!ts)return""; try{ const d=new Date(ts),now=new Date(),TZ="America/Los_Angeles"; const t=d.toLocaleTimeString("en-US",{timeZone:TZ,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}); const dDay=d.toLocaleDateString("en-US",{timeZone:TZ}),nDay=now.toLocaleDateString("en-US",{timeZone:TZ}); const day=(dDay===nDay)?"":d.toLocaleDateString("en-US",{timeZone:TZ,month:"short",day:"numeric"})+" "; return day+t+" PT"; }catch(e){return"";} }
 function renderChat(){
   const box=$("#msgs");const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
   box.innerHTML="";
