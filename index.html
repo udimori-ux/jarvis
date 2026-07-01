@@ -91,6 +91,7 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
       <input id="email" type="email" placeholder="email" autocomplete="username"/>
       <input id="pass" type="password" placeholder="password" autocomplete="current-password"/>
       <button id="loginBtn" type="submit">Sign in</button>
+      <a href="#" id="forgotLink" style="color:var(--mut);font-size:12px;text-align:center;text-decoration:none">Forgot password?</a>
       <div class="err" id="loginErr"></div>
     </div>
   </form>
@@ -122,8 +123,8 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 
 <div id="pwModal">
   <form class="card" id="pwForm">
-    <h1><span class="logo">J</span> Change password</h1>
-    <p style="color:var(--mut);font-size:12.5px;margin-top:0">Set a new password for this board.</p>
+    <h1><span class="logo">J</span> <span id="pwTitle">Change password</span></h1>
+    <p id="pwSub" style="color:var(--mut);font-size:12.5px;margin-top:0">Set a new password for this board.</p>
     <div style="display:flex;flex-direction:column;gap:9px">
       <input id="pwNew" type="password" placeholder="new password" autocomplete="new-password"/>
       <input id="pwConfirm" type="password" placeholder="confirm new password" autocomplete="new-password"/>
@@ -148,22 +149,42 @@ async function boot(){
   if(session){showApp();} else {$("#login").style.display="grid";$("#app").style.display="none";}
 }
 $("#loginForm").addEventListener("submit",async e=>{
-  e.preventDefault();$("#loginErr").textContent="";$("#loginBtn").disabled=true;
+  e.preventDefault();$("#loginErr").style.color="";$("#loginErr").textContent="";$("#loginBtn").disabled=true;
   const {error}=await sb.auth.signInWithPassword({email:$("#email").value.trim(),password:$("#pass").value});
   $("#loginBtn").disabled=false;
   if(error){$("#loginErr").textContent=error.message;} else {showApp();}
 });
+/* ---- forgot password (send reset email) ---- */
+$("#forgotLink").addEventListener("click",async e=>{
+  e.preventDefault();
+  const email=$("#email").value.trim();
+  const err=$("#loginErr");
+  if(!email){err.style.color="";err.textContent="Enter your email above, then tap Forgot password.";$("#email").focus();return;}
+  err.style.color="";err.textContent="Sending reset link…";
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://jarvis-d2s.pages.dev/'});
+  if(error){err.style.color="";err.textContent=error.message;}
+  else{err.style.color="#86efac";err.textContent="Check your email for a reset link.";}
+});
 $("#logoutBtn").addEventListener("click",async()=>{await sb.auth.signOut();location.reload();});
 $("#refreshBtn").addEventListener("click",load);
 
-/* ---- change password ---- */
+/* ---- change password (also reused for email recovery: "Set a new password") ---- */
+let recoveryMode=false;
 function pwSetMsg(t,cls){const m=$("#pwMsg");m.textContent=t;m.className="err"+(cls?" "+cls:"");}
-function openPw(){$("#pwNew").value="";$("#pwConfirm").value="";pwSetMsg("");$("#pwModal").classList.add("on");$("#pwNew").focus();}
+function openPw(recovery){
+  recoveryMode=!!recovery;
+  $("#pwTitle").textContent=recoveryMode?"Set a new password":"Change password";
+  $("#pwSub").textContent=recoveryMode?"Choose a new password to finish signing in.":"Set a new password for this board.";
+  $("#pwCancel").style.display=recoveryMode?"none":"";
+  $("#pwNew").value="";$("#pwConfirm").value="";pwSetMsg("");$("#pwModal").classList.add("on");$("#pwNew").focus();
+}
 function closePw(){$("#pwModal").classList.remove("on");}
-$("#pwBtn").addEventListener("click",openPw);
+$("#pwBtn").addEventListener("click",()=>openPw(false));
 $("#pwCancel").addEventListener("click",closePw);
-$("#pwModal").addEventListener("click",e=>{if(e.target===$("#pwModal"))closePw();});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#pwModal").classList.contains("on"))closePw();});
+$("#pwModal").addEventListener("click",e=>{if(e.target===$("#pwModal")&&!recoveryMode)closePw();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!recoveryMode&&$("#pwModal").classList.contains("on"))closePw();});
+/* Detect the email reset link: Supabase fires PASSWORD_RECOVERY once it parses the URL hash */
+sb.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")openPw(true);});
 $("#pwForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const p1=$("#pwNew").value,p2=$("#pwConfirm").value;
@@ -173,7 +194,9 @@ $("#pwForm").addEventListener("submit",async e=>{
   const {error}=await sb.auth.updateUser({password:p1});
   $("#pwSave").disabled=false;
   if(error){pwSetMsg(error.message,"bad");}
-  else{pwSetMsg("Password updated ✓","ok");setTimeout(closePw,1200);}
+  else{pwSetMsg("Password updated ✓","ok");
+    if(recoveryMode){setTimeout(()=>{closePw();recoveryMode=false;try{history.replaceState(null,"",location.pathname);}catch(_){}showApp();},900);}
+    else setTimeout(closePw,1200);}
 });
 
 function showApp(){$("#login").style.display="none";$("#app").style.display="";$("#app").classList.add("on");applyViews();load();if(!window._iv)window._iv=setInterval(load,4000);}
