@@ -19,15 +19,14 @@ button{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:10px 
 button:disabled{opacity:.5;cursor:default}
 .err{color:#fca5a5;font-size:12.5px;min-height:16px}
 #app{display:none;height:100%}
-#app.on{display:grid;grid-template-rows:auto auto 1fr;grid-template-columns:1fr 360px;grid-template-areas:"top top" "pending pending" "board chat"}
-#app.hide-pending #pending{display:none!important}#app.hide-board #board{display:none!important}#app.hide-chat #chat{display:none!important}
+#app.on{display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr minmax(320px,380px);grid-template-areas:"top top" "content chat";height:100%}
+/* chat = PERMANENT right-hand panel (two-region layout); always visible NEXT TO the active view, both usable at once */
+#chat{grid-area:chat!important;display:flex!important;flex-direction:column;border-left:1px solid var(--line);background:var(--panel);min-height:0}
+@media(max-width:820px){#app.on{grid-template-columns:1fr;grid-template-areas:"top" "content" "chat"}#chat{max-height:42vh;border-left:0;border-top:1px solid var(--line)}}
 header{grid-area:top;display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#11151d,#0d1017)}
 header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 .spacer{margin-left:auto}.ghost{background:transparent;border:1px solid var(--line);color:var(--mut);font-weight:500;padding:6px 11px}
 .ghost.active{color:#7dd3fc;border-color:#0ea5e9}
-.views{display:flex;gap:5px;margin-left:6px}
-.vchip{background:var(--p2);border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:5px 9px;font-size:14px;line-height:1;cursor:pointer}
-.vchip.on{background:#0ea5e918;border-color:#0ea5e9;color:#7dd3fc}
 /* pending-for-you panel */
 #pending{grid-area:pending;display:none;background:linear-gradient(180deg,#1a1510,#161b25);border-bottom:1px solid var(--line);padding:10px 14px}
 #pending .ph{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#fcd34d;margin-bottom:8px;display:flex;gap:8px;align-items:center}
@@ -68,12 +67,12 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 .msg.user .mbtn{border-color:#ffffff66;color:#eef}
 .pending{align-self:flex-start;color:var(--mut);font-size:12px;font-style:italic}
 .compose{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:flex-end}
-.compose textarea{resize:none;height:44px;max-height:140px}
+.compose textarea{resize:none;min-height:88px;max-height:260px;line-height:1.45;padding:12px 14px}
 .iconbtn{background:var(--p2);border:1px solid var(--line);color:var(--mut);border-radius:9px;padding:10px 13px;font-size:17px;line-height:1}
 .iconbtn.rec{background:#ef444422;border-color:#ef4444;color:#fca5a5;animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.45}}
 .tts{font-size:11px;padding:5px 9px}
-@media(max-width:820px){#app.on{display:flex;flex-direction:column}header{flex:0 0 auto}#pending{flex:0 0 auto;max-height:40vh;overflow:auto}#board{flex:1 1 0;min-height:90px}#chat{flex:1 1 0;min-height:0;border-left:0;border-top:1px solid var(--line)}}
+@media(max-width:560px){.tabs{margin-left:0}.tab{padding:6px 8px}.tab .lbl{display:none}}
 /* change-password modal */
 #pwModal{display:none;position:fixed;inset:0;z-index:50;background:rgba(6,9,14,.72);place-items:center;padding:16px}
 #pwModal.on{display:grid}
@@ -81,6 +80,116 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 #pwModal .err{color:var(--mut)}
 #pwModal .err.bad{color:#fca5a5}
 #pwModal .err.ok{color:#86efac}
+/* ===== OPS HUB + unified view-tab nav (Phase-1 local preview) ===== */
+#opshub{overflow:hidden}
+/* single-view tab model: exactly one of pending/board/chat/opshub shown, filling the content area */
+#pending,#board,#opshub,#agents{grid-area:content;min-height:0}
+#app[data-view] #pending,#app[data-view] #board,#app[data-view] #opshub,#app[data-view] #agents{display:none!important}
+#app[data-view="pending"] #pending{display:block!important;overflow:auto}
+#app[data-view="board"] #board{display:grid!important}
+#app[data-view="ops"] #opshub{display:flex!important;flex-direction:column}
+#app[data-view="agents"] #agents{display:block!important;overflow:auto}
+/* ===== AGENTS tab (live by-agent kanban from Supabase jarvis_agents) ===== */
+.ag-wrap{padding:18px 20px}
+.ag-h{margin:0 0 14px;font-size:17px}
+.ag-h .sub{font-weight:400;color:var(--mut);font-size:12.5px;margin-left:8px}
+.ag-cols{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.ag-col{flex:0 0 244px;max-width:264px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ag-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ag-id{display:flex;align-items:center;gap:9px;min-width:0}
+.ag-av{width:30px;height:30px;border-radius:8px;background:#0ea5e91f;color:#7dd3fc;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.ag-name{font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag-meta{font-size:11px;color:var(--mut)}
+.ag-pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap;flex:none}
+.ag-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.ag-card{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px}
+.ag-task-l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin-bottom:3px}
+.ag-task{font-size:13px;color:var(--ink);line-height:1.35}
+.ag-block{margin-top:8px;font-size:11.5px;color:#f87171;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.3);border-radius:7px;padding:5px 7px}
+.ag-upd{margin-top:8px;font-size:10.5px;color:var(--mut)}
+.ag-err{color:var(--mut);font-size:13px}
+.ag-seen{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mut)}
+.ag-live{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.22);flex:none}
+.ag-live.off{background:#6b7280;box-shadow:none}
+.ag-col.off{opacity:.58}
+.ag-col.off .ag-name{color:var(--mut)}
+.tabs{display:flex;gap:2px;margin-left:6px;background:var(--p2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tab{background:transparent;border:0;color:var(--mut);border-radius:7px;padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer;line-height:1;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.tab:hover{color:var(--ink)}
+.tab.on{background:#0ea5e91f;color:#7dd3fc;box-shadow:inset 0 0 0 1px #0ea5e955}
+/* GSCCTV branding — only while the Ops Hub tab is active */
+#brandImg{width:34px;height:34px;border-radius:8px;object-fit:contain;display:none}
+#app[data-view="ops"] #brandBadge{display:none}
+#app[data-view="ops"] #brandImg{display:block}
+#app[data-view="ops"] .tab[data-view="ops"].on{background:rgba(200,162,75,.16);color:#e7cd84;box-shadow:inset 0 0 0 1px rgba(200,162,75,.5)}
+#opshub .oh-inc-proj,#opshub .oh-tk-p{color:#C8A24B}
+#opshub .oh-proj.over{border-color:#C8A24B;background:rgba(200,162,75,.10);outline-color:rgba(200,162,75,.5)}
+#opshub .oh-wdrop.over{background:rgba(200,162,75,.10);outline-color:rgba(200,162,75,.5)}
+.oh-top{border-bottom-color:rgba(200,162,75,.35)}
+.oh-groupby{display:flex;align-items:center;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:2px 2px 2px 8px}
+.ohg-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-right:4px}
+.ohg{background:transparent;border:0;color:var(--mut);border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.ohg:hover{color:var(--ink)}
+.ohg.on{background:rgba(200,162,75,.16);color:#e7cd84}
+.oh-stagechip{font-size:10px;border-radius:6px;padding:1px 6px;border:1px solid var(--line);color:var(--mut)}
+.oh-stagechip.s-new{color:#cbd5e1}.oh-stagechip.s-in_progress{color:#fcd34d;border-color:#f59e0b55}.oh-stagechip.s-review{color:#d8b4fe;border-color:#a855f755}.oh-stagechip.s-done{color:#86efac;border-color:#22c55e55}
+.oh-top{display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#11151d,#0d1017);flex:0 0 auto;flex-wrap:wrap}
+.oh-top h2{font-size:14px;margin:0;display:flex;align-items:center;gap:8px}
+.oh-top .sub{color:var(--mut);font-size:11px;font-weight:400}
+.oh-sel{background:var(--p2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit}
+.oh-legend{display:flex;gap:11px;margin-left:auto;align-items:center;color:var(--mut);font-size:11.5px;flex-wrap:wrap}
+.oh-sw{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle}
+.oh-av{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-size:10.5px;font-weight:700;color:#fff;flex:none}
+.oh-J{background:linear-gradient(135deg,#5b8cff,#7c5cff)}.oh-T{background:linear-gradient(135deg,#ff8f5b,#ff5d6c)}.oh-A{background:linear-gradient(135deg,#2fce8f,#1c8f63)}.oh-R{background:linear-gradient(135deg,#f59e0b,#b45309)}
+.oh-body{flex:1;min-height:0;display:grid;grid-template-columns:290px 300px 1fr}
+.oh-pane{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.oh-pane:last-child{border-right:0}
+.oh-ph{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);padding:10px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex:0 0 auto}
+.oh-ph .n{background:var(--p2);border-radius:20px;padding:0 8px;font-size:11px}
+.oh-scroll{overflow:auto;padding:10px;flex:1;min-height:0}
+.oh-grp{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin:8px 2px 6px}
+.oh-inc{background:var(--p2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:8px;cursor:grab}
+.oh-inc:active{cursor:grabbing}.oh-inc.gone{opacity:.4;filter:saturate(.4);cursor:default}
+.oh-inc-top{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.oh-pill{font-size:10px;font-weight:600;border-radius:20px;padding:1px 7px}
+.ch-phone{background:rgba(47,206,143,.16);color:#5fe0a6}.ch-chat{background:rgba(91,140,255,.16);color:#9fb8ff}.ch-web{background:rgba(124,92,255,.18);color:#bda6ff}.ch-email{background:rgba(245,158,11,.16);color:#fcd34d}.ch-wom{background:rgba(255,93,108,.16);color:#ff9aa4}
+.oh-time{margin-left:auto;color:var(--mut);font-size:10px}
+.oh-inc-name{font-weight:600;font-size:12.5px}
+.oh-inc-sum{color:var(--mut);font-size:11.5px;line-height:1.4;margin:2px 0 4px}
+.oh-inc-proj{font-size:10.5px;color:#7dd3fc}
+.oh-note{color:var(--mut);font-size:11px;padding:9px 4px 2px;border-top:1px dashed var(--line);margin-top:6px}
+.oh-proj{background:var(--p2);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.oh-proj.over{border-color:#0ea5e9;background:#0ea5e914;outline:1.5px dashed #0ea5e955;outline-offset:-4px}
+.oh-proj-h{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer}
+.oh-proj-h:hover{background:#ffffff08}
+.oh-ct{transition:.2s;color:var(--mut);font-size:11px}.oh-proj.col .oh-ct{transform:rotate(-90deg)}.oh-proj.col .oh-proj-b{display:none}
+.oh-proj-nm{font-weight:600;font-size:12.5px}.oh-proj-su{font-size:10.5px;color:var(--mut)}
+.oh-pct{margin-left:auto;font-weight:800;font-size:12px;padding:2px 8px;border-radius:20px}
+.oh-green{background:rgba(34,197,94,.18);color:#86efac}.oh-red{background:rgba(239,68,68,.16);color:#fca5a5}
+.oh-proj-b{padding:0 10px 8px}
+.oh-subx{margin-top:6px}.oh-sub-h{font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);margin-bottom:3px;display:flex;justify-content:space-between}
+.oh-sub-i{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:3px 6px;border-radius:6px;background:var(--bg);margin-bottom:3px}
+.oh-dot{width:6px;height:6px;border-radius:50%;flex:none}.oh-d-done{background:var(--ok)}.oh-d-open{background:var(--p1)}
+.oh-sub-i .tt{flex:1}.oh-sub-i.dn .tt{text-decoration:line-through;color:var(--mut)}
+.oh-sub-e{font-size:10.5px;color:var(--mut);font-style:italic;padding:1px 6px}
+.oh-wf{height:100%;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,1fr);gap:10px;padding:10px;overflow:auto}
+.oh-wcol{background:var(--panel);border:1px solid var(--line);border-radius:11px;display:flex;flex-direction:column;min-height:80px}
+.oh-wh{font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:9px 11px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.oh-wh .n{color:var(--mut);background:var(--p2);border-radius:20px;padding:0 7px;font-size:10.5px}
+.oh-wdrop{padding:9px;display:flex;flex-direction:column;gap:8px;flex:1;overflow:auto;min-height:40px}
+.oh-wdrop.over{background:#3b82f611;outline:1.5px dashed #3b82f655;outline-offset:-6px}
+.oh-tk{background:var(--p2);border:1px solid var(--line);border-left:3px solid var(--p3);border-radius:9px;padding:8px 10px;cursor:grab}
+.oh-tk:active{cursor:grabbing}
+.oh-tk.s-new{border-left-color:var(--p3)}.oh-tk.s-in_progress{border-left-color:var(--prog)}.oh-tk.s-review{border-left-color:var(--rev)}.oh-tk.s-done{border-left-color:var(--ok);opacity:.75}
+.oh-tk-t{font-weight:600;font-size:12.5px;margin-bottom:4px}
+.oh-tk-p{font-size:10px;color:#7dd3fc;margin-bottom:5px}
+.oh-tk-m{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.oh-src{font-size:10px;color:var(--mut)}
+.oh-due{font-size:10px;border-radius:6px;padding:1px 6px;margin-left:auto}
+.oh-due.amber{background:rgba(245,158,11,.18);color:#fcd34d}.oh-due.red{background:rgba(239,68,68,.2);color:#fca5a5}.oh-due.none{color:var(--mut)}
+.oh-mini-av{width:19px;height:19px;font-size:9.5px;cursor:pointer}
+.oh-flash{animation:ohflash .6s ease}@keyframes ohflash{0%{background:rgba(200,162,75,.30)}100%{}}
+@media(max-width:900px){.oh-body{grid-template-columns:1fr;grid-auto-rows:minmax(200px,auto);overflow:auto}.oh-pane{border-right:0;border-bottom:1px solid var(--line)}}
 </style></head><body>
 
 <div id="login">
@@ -99,9 +208,15 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
 
 <div id="app">
   <header>
-    <span class="logo">J</span>
-    <div><h1>JARVIS</h1><div class="sub">PM · QA · your board — <span id="count"></span></div></div>
-    <div class="views"><button class="vchip on" data-sec="pending" title="Toggle Pending">⏳</button><button class="vchip on" data-sec="board" title="Toggle Board">📋</button><button class="vchip on" data-sec="chat" title="Toggle Chat">💬</button></div>
+    <span class="logo" id="brandBadge">J</span>
+    <img id="brandImg" src="logo-gscctv.png" alt="Golden State CCTV"/>
+    <div><h1 id="brandTitle">JARVIS</h1><div class="sub">PM · QA · your board — <span id="count"></span></div></div>
+    <div class="tabs" id="viewTabs">
+      <button class="tab" data-view="pending">⏳ <span class="lbl">Pending</span></button>
+      <button class="tab" data-view="board">📋 <span class="lbl">Board</span></button>
+      <button class="tab" data-view="ops">🗂 <span class="lbl">Ops Hub</span></button>
+      <button class="tab" data-view="agents">🧑‍💻 <span class="lbl">Agents</span></button>
+    </div>
     <span class="spacer"></span>
     <button class="ghost tts" id="ttsBtn" title="Read Jarvis replies aloud">🔇 Read: Off</button>
     <button class="ghost" id="refreshBtn">↻ Refresh</button>
@@ -119,6 +234,8 @@ header h1{font-size:16px;margin:0}header .sub{color:var(--mut);font-size:11.5px}
       <button id="sendBtn" type="submit">Send</button>
     </form>
   </div>
+  <div id="opshub"></div>
+  <div id="agents"></div>
 </div>
 
 <div id="pwModal">
@@ -199,9 +316,66 @@ $("#pwForm").addEventListener("submit",async e=>{
     else setTimeout(closePw,1200);}
 });
 
-function showApp(){$("#login").style.display="none";$("#app").style.display="";$("#app").classList.add("on");applyViews();load();if(!window._iv)window._iv=setInterval(load,4000);}
-function applyViews(){["pending","board","chat"].forEach(s=>{const hid=localStorage.getItem("hide-"+s)==="1";$("#app").classList.toggle("hide-"+s,hid);const c=document.querySelector('.vchip[data-sec="'+s+'"]');if(c)c.classList.toggle("on",!hid);});}
-document.querySelectorAll(".vchip").forEach(c=>c.addEventListener("click",()=>{const s=c.dataset.sec;const hid=$("#app").classList.toggle("hide-"+s);localStorage.setItem("hide-"+s,hid?"1":"0");c.classList.toggle("on",!hid);}));
+function showApp(){$("#login").style.display="none";$("#app").style.display="";$("#app").classList.add("on");setView(localStorage.getItem("view")||"board");load();if(!window._iv)window._iv=setInterval(load,4000);}
+function setView(v){
+  if(!["pending","board","ops","agents"].includes(v))v="board";
+  $("#app").setAttribute("data-view",v);
+  localStorage.setItem("view",v);
+  document.querySelectorAll("#viewTabs .tab").forEach(t=>t.classList.toggle("on",t.dataset.view===v));
+  $("#brandTitle").textContent=(v==="ops")?"Golden State CCTV":"JARVIS";
+  if(v==="ops"&&window._opsInit)window._opsInit();
+  if(v==="agents"&&window._agentsInit)window._agentsInit();
+}
+document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click",()=>setView(t.dataset.view)));
+
+/* ===== AGENTS tab — live by-agent view from Supabase jarvis_agents (read-only, polls 15s) ===== */
+(function(){
+  let timer=null;
+  const PILL={
+    WORKING:{bg:'rgba(245,158,11,.15)',fg:'#f5b54a',br:'rgba(245,158,11,.5)',dot:'#f59e0b',lbl:'WORKING'},
+    IDLE:{bg:'rgba(139,151,168,.14)',fg:'#8b97a8',br:'rgba(139,151,168,.4)',dot:'#8b97a8',lbl:'IDLE'},
+    BLOCKED:{bg:'rgba(239,68,68,.15)',fg:'#f87171',br:'rgba(239,68,68,.5)',dot:'#ef4444',lbl:'BLOCKED'}
+  };
+  const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const initial=n=>{const h=String(n||'').split('/').pop()||'?';return h[0]?h[0].toUpperCase():'?';};
+  async function render(){
+    const wrap=$("#agents"); if(!wrap)return;
+    const {data,error}=await sb.from("jarvis_agents").select("*").order("name");
+    if(error){wrap.innerHTML='<div class="ag-wrap"><h2 class="ag-h">🧑‍💻 Agents</h2><p class="ag-err">Could not load agents.</p></div>';return;}
+    const rows=data||[];
+    const now=Date.now(), ONLINE_MS=15*60*1000; // seen within 15 min = online (updated_at refreshed on activity)
+    const rel=ms=>{const s=Math.round(ms/1000);if(s<60)return s+'s ago';const m=Math.round(s/60);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';};
+    let onlineCount=0;
+    const cols=rows.map(a=>{
+      const p=PILL[String(a.status||'').toUpperCase()]||PILL.IDLE;
+      const t=a.updated_at?new Date(a.updated_at).getTime():null;
+      const age=t?now-t:null;
+      const online=age!=null&&age<ONLINE_MS; if(online)onlineCount++;
+      const seenTxt=age==null?'last seen unknown':(online?'online now':'last seen '+rel(age));
+      const upd=t?new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';
+      return `<div class="ag-col${online?'':' off'}">
+        <div class="ag-head">
+          <div class="ag-id"><span class="ag-av">${esc(initial(a.name))}</span>
+            <div><div class="ag-name">${esc(a.name)}</div><div class="ag-meta">${esc(a.machine||'')} · ${esc(a.lane||'')}</div></div>
+          </div>
+          <span class="ag-pill" style="background:${p.bg};color:${p.fg};box-shadow:inset 0 0 0 1px ${p.br}"><span class="ag-dot" style="background:${p.dot}"></span>${p.lbl}</span>
+        </div>
+        <div class="ag-seen"><span class="ag-live${online?'':' off'}"></span>${esc(seenTxt)}</div>
+        <div class="ag-card">
+          <div class="ag-task-l">Task at hand</div>
+          <div class="ag-task">${esc(a.current_task||'—')}</div>
+          ${a.blocked_on?`<div class="ag-block">⛔ Blocked on: ${esc(a.blocked_on)}</div>`:''}
+          ${upd?`<div class="ag-upd">updated ${esc(upd)}</div>`:''}
+        </div>
+      </div>`;
+    }).join("");
+    wrap.innerHTML=`<div class="ag-wrap">
+      <h2 class="ag-h">🧑‍💻 Agents <span class="sub">who's on what right now · live · ${onlineCount}/${rows.length} online</span></h2>
+      <div class="ag-cols">${cols||'<p class="ag-err">No agents yet.</p>'}</div>
+    </div>`;
+  }
+  window._agentsInit=function(){ render(); if(!timer)timer=setInterval(()=>{ if($("#app").getAttribute("data-view")==="agents")render(); },15000); };
+})();
 
 async function load(){
   const [{data:t},{data:m}]=await Promise.all([
@@ -316,13 +490,236 @@ $("#msgs").addEventListener("click",e=>{
 function selFallback(btn){const r=document.createRange();r.selectNodeContents(btn.closest(".msg").querySelector(".mc"));const s=getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand("copy");const o=btn.textContent;btn.textContent="✓ Copied";setTimeout(()=>btn.textContent=o,1200);}catch(_){}}
 $("#composeForm").addEventListener("submit",send);
 $("#prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send(e);}});
-async function send(e){e.preventDefault();const v=$("#prompt").value.trim();if(!v)return;
+function autoGrowPrompt(){const t=$("#prompt");if(!t)return;t.style.height="auto";t.style.height=Math.min(t.scrollHeight,260)+"px";}
+$("#prompt").addEventListener("input",autoGrowPrompt);
+async function sendMsg(v){v=(v||"").trim();if(!v)return;await sb.from("jarvis_messages").insert({role:"user",content:v,handled:false});await load();}
+async function send(e){if(e)e.preventDefault();const v=$("#prompt").value.trim();if(!v)return;
   if(recording){try{rec.stop();}catch(e){}}
-  $("#prompt").value="";$("#sendBtn").disabled=true;
-  await sb.from("jarvis_messages").insert({role:"user",content:v,handled:false});
-  $("#sendBtn").disabled=false;await load();}
+  $("#prompt").value="";$("#prompt").style.height="";$("#sendBtn").disabled=true;
+  await sendMsg(v);
+  $("#sendBtn").disabled=false;}
 
 function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ===== OPS HUB (local preview — sample data only, no Supabase writes) ===== */
+(function(){
+  const TODAY=new Date('2026-07-01T12:00:00');
+  const PEOPLE={J:'Judah',T:'Tony',A:'Ana',R:'Rob'};
+  const CH={phone:['📞','Phone','ch-phone'],chat:['💬','Chat','ch-chat'],web:['🌐','Web','ch-web'],email:['✉️','Email','ch-email'],wom:['🗣️','Word of Mouth','ch-wom']};
+  const SUBS=[['admin','Admin'],['biz','Business Opportunities'],['support','Support Tickets'],['notices','Notices']];
+  const STAGES=[['new','New'],['in_progress','In progress'],['review','Review'],['done','Done']];
+  const STAGE_LABEL=Object.fromEntries(STAGES);
+  let seq=900, groupBy='status';
+  let projects=[
+    {id:'p1',group:'lead',name:'Riverside Aquatics — New Contract',su:'Lead · warm',tasks:[
+      {id:'t101',title:'Draft proposal deck',sub:'biz',stage:'done',who:'J',due:'2026-06-28',channel:'email',from:'Riverside Aquatics'},
+      {id:'t102',title:'Send W-9 + certificate of insurance',sub:'admin',stage:'done',who:'T',due:'2026-06-29',channel:'email',from:'Riverside Aquatics'},
+      {id:'t103',title:'Follow-up call re: budget',sub:'biz',stage:'new',who:'J',due:'2026-07-02',channel:'phone',from:'Riverside Aquatics'}]},
+    {id:'p2',group:'lead',name:'Maple Grove HOA',su:'Lead · inbound',tasks:[
+      {id:'t201',title:'Site walk scheduling',sub:'admin',stage:'done',who:'T',due:'2026-06-30',channel:'email',from:'Marcus Bell'},
+      {id:'t202',title:'Prepare quote',sub:'biz',stage:'review',who:'J',due:'2026-07-01',channel:'email',from:'Marcus Bell'}]},
+    {id:'p3',group:'lead',name:'Downtown Fitness Center',su:'Lead · cold',tasks:[
+      {id:'t301',title:'Intro email sequence',sub:'biz',stage:'in_progress',who:'A',due:'2026-07-04',channel:'web',from:'Downtown Fitness'},
+      {id:'t302',title:'Add to CRM',sub:'admin',stage:'done',who:'T',due:'2026-06-27',channel:'web',from:'Downtown Fitness'},
+      {id:'t303',title:'Answer pricing question',sub:'support',stage:'new',who:'J',due:'2026-06-30',channel:'web',from:'Downtown Fitness'}]},
+    {id:'p4',group:'existing',name:'Lakeside Resort — Pool Service',su:'Existing · monthly',tasks:[
+      {id:'t401',title:'March invoice reconciliation',sub:'admin',stage:'done',who:'T',due:'2026-06-20',channel:'email',from:'Tom Reyes'},
+      {id:'t402',title:'Replace pump seal',sub:'support',stage:'done',who:'J',due:'2026-06-25',channel:'phone',from:'Tom Reyes'},
+      {id:'t403',title:'Upsell heater maintenance',sub:'biz',stage:'done',who:'R',due:'2026-06-26',channel:'phone',from:'Tom Reyes'},
+      {id:'t404',title:'Post seasonal closing notice',sub:'notices',stage:'done',who:'T',due:'2026-06-29',channel:'email',from:'—'}]},
+    {id:'p5',group:'existing',name:'Cedar Elementary School',su:'Existing · contract',tasks:[
+      {id:'t501',title:'Renew annual agreement',sub:'admin',stage:'done',who:'J',due:'2026-06-24',channel:'email',from:'—'},
+      {id:'t502',title:'Handle chemical smell complaint',sub:'support',stage:'in_progress',who:'T',due:'2026-07-01',channel:'chat',from:'Priya Nadig'},
+      {id:'t503',title:'Notify staff of maintenance window',sub:'notices',stage:'new',who:'T',due:'2026-07-05',channel:'email',from:'—'}]},
+    {id:'p6',group:'existing',name:'Sunset Condominiums',su:'Existing · retainer',tasks:[
+      {id:'t601',title:'Q2 water testing report',sub:'admin',stage:'in_progress',who:'J',due:'2026-07-03',channel:'email',from:'—'},
+      {id:'t602',title:'Board wants gym equipment quote',sub:'biz',stage:'new',who:'R',due:'2026-07-08',channel:'chat',from:'—'},
+      {id:'t603',title:'Leak in filtration room',sub:'support',stage:'review',who:'J',due:'2026-07-02',channel:'phone',from:'Karen Whitfield'},
+      {id:'t604',title:'Post pool hours change',sub:'notices',stage:'done',who:'T',due:'2026-06-30',channel:'email',from:'—'}]}
+  ];
+  let incoming=[
+    {id:'i1',channel:'phone',name:'Karen Whitfield',summary:'Cloudy pool at Sunset Condos — wants someone out this week.',time:'8m',projectId:'p6'},
+    {id:'i2',channel:'email',name:'Marcus Bell (Maple Grove HOA)',summary:'Replied to the quote, asking if we can start before month-end.',time:'22m',projectId:'p2'},
+    {id:'i3',channel:'web',name:'Downtown Fitness Center',summary:'Web form: pricing for weekly commercial pool service.',time:'40m',projectId:'p3'},
+    {id:'i4',channel:'chat',name:'Priya Nadig',summary:'Chemical smell complaint at Cedar Elementary, parents concerned.',time:'1h',projectId:'p5'},
+    {id:'i5',channel:'phone',name:'Tom Reyes (Lakeside Resort)',summary:'Happy with service, wants to add hot tub maintenance.',time:'2h',projectId:'p4'},
+    {id:'i6',channel:'email',name:'Riverside Aquatics',summary:'Following up on the proposal deck, wants a budget call.',time:'3h',projectId:'p1'}
+  ];
+  const FILTERED=3;
+  const $$=s=>document.getElementById(s);
+  const fil=()=>{const f=$$('oh-filter');return f?f.value:'all';};
+  const projName=id=>{const p=projects.find(x=>x.id===id);return p?p.name:'Unrouted';};
+  const findTask=id=>{for(const p of projects){const t=p.tasks.find(x=>x.id===id);if(t)return{t,p};}return null;};
+  const pct=p=>p.tasks.length?Math.round(p.tasks.filter(t=>t.stage==='done').length/p.tasks.length*100):100;
+  function dueBadge(due,stage){
+    if(stage==='done')return{cls:'none',txt:due?'Done '+due.slice(5):'Done'};
+    if(!due)return{cls:'none',txt:'No due date'};
+    const days=Math.round((new Date(due+'T12:00:00')-TODAY)/86400000);
+    if(days<0)return{cls:'red',txt:'Overdue '+(-days)+'d'};
+    if(days===0)return{cls:'amber',txt:'Due today'};
+    if(days<=3)return{cls:'amber',txt:'Due in '+days+'d'};
+    return{cls:'none',txt:'Due '+due.slice(5)};
+  }
+  function buildShell(){
+    $$('opshub').innerHTML=`
+      <div class="oh-top">
+        <h2>🗂 Ops Hub <span class="sub">comms → route to a project → task → workflow · sample data</span></h2>
+        <select class="oh-sel" id="oh-filter"><option value="all">All projects</option></select>
+        <div class="oh-groupby" id="oh-groupby">
+          <span class="ohg-lbl">Group by</span>
+          <button class="ohg on" data-g="status">Status</button>
+          <button class="ohg" data-g="project">Project</button>
+          <button class="ohg" data-g="agent">Agent</button>
+        </div>
+        <div class="oh-legend">
+          <span><span class="oh-sw" style="background:var(--ok)"></span>100%</span>
+          <span><span class="oh-sw" style="background:var(--blk)"></span>pending</span>
+          <span><span class="oh-sw" style="background:var(--prog)"></span>due soon</span>
+          <span><span class="oh-sw" style="background:var(--p0)"></span>overdue</span>
+          <span class="oh-av oh-J" title="Judah">J</span><span class="oh-av oh-T" title="Tony">T</span><span class="oh-av oh-A" title="Ana">A</span><span class="oh-av oh-R" title="Rob">R</span>
+        </div>
+      </div>
+      <div class="oh-body">
+        <div class="oh-pane"><div class="oh-ph">Incoming · by project <span class="n" id="oh-inc-n">0</span></div><div class="oh-scroll" id="oh-inc"></div></div>
+        <div class="oh-pane"><div class="oh-ph">Projects · drop a comm to make a task <span class="n" id="oh-proj-n">0</span></div><div class="oh-scroll" id="oh-tree"></div></div>
+        <div class="oh-pane"><div class="oh-ph">Task workflow <span class="n" id="oh-wf-n">0</span></div><div class="oh-wf" id="oh-wf"></div></div>
+      </div>`;
+    const f=$$('oh-filter');
+    [['lead','Leads'],['existing','Existing Projects']].forEach(([g,lb])=>{
+      const og=document.createElement('optgroup');og.label=lb;
+      projects.filter(p=>p.group===g).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});
+      f.appendChild(og);
+    });
+    f.addEventListener('change',renderAll);
+    document.querySelectorAll('#oh-groupby .ohg').forEach(b=>b.addEventListener('click',()=>{
+      groupBy=b.dataset.g;
+      document.querySelectorAll('#oh-groupby .ohg').forEach(x=>x.classList.toggle('on',x.dataset.g===groupBy));
+      renderBoard();
+    }));
+    $$('opshub').addEventListener('click',onClick);
+  }
+  function renderAll(){renderIncoming();renderTree();renderBoard();}
+  function renderIncoming(){
+    const box=$$('oh-inc');const F=fil();
+    const act=incoming.filter(i=>!i.gone&&(F==='all'||i.projectId===F));
+    $$('oh-inc-n').textContent=act.length;
+    const groups={};act.forEach(i=>{(groups[i.projectId]=groups[i.projectId]||[]).push(i);});
+    let html='';
+    Object.keys(groups).forEach(pid=>{
+      html+=`<div class="oh-grp">${esc(projName(pid))}</div>`;
+      groups[pid].forEach(i=>{const c=CH[i.channel];
+        html+=`<div class="oh-inc" draggable="true" data-inc="${i.id}">
+          <div class="oh-inc-top"><span class="oh-pill ${c[2]}">${c[0]} ${c[1]}</span><span class="oh-time">${i.time}</span></div>
+          <div class="oh-inc-name">${esc(i.name)}</div>
+          <div class="oh-inc-sum">${esc(i.summary)}</div>
+          <div class="oh-inc-proj">▸ drag onto ${esc(projName(i.projectId))} →</div>
+        </div>`;});
+    });
+    if(!act.length)html=`<div class="oh-sub-e">Inbox zero — every comm routed to a project.</div>`;
+    html+=`<div class="oh-note">⌀ ${FILTERED} bank / junk items auto-filtered out</div>`;
+    box.innerHTML=html;
+    box.querySelectorAll('.oh-inc').forEach(el=>el.addEventListener('dragstart',e=>e.dataTransfer.setData('text','inc:'+el.dataset.inc)));
+  }
+  function renderTree(){
+    const box=$$('oh-tree');$$('oh-proj-n').textContent=projects.length;
+    let html='';
+    [['lead','Leads'],['existing','Existing Projects']].forEach(([g,lb])=>{
+      html+=`<div class="oh-grp">${lb}</div>`;
+      projects.filter(p=>p.group===g).forEach(p=>{
+        const pc=pct(p),gr=pc===100;
+        html+=`<div class="oh-proj" data-proj="${p.id}">
+          <div class="oh-proj-h" data-toggle="${p.id}">
+            <span class="oh-ct">▾</span>
+            <div><div class="oh-proj-nm">${esc(p.name)}</div><div class="oh-proj-su">${esc(p.su)} · ${p.tasks.filter(t=>t.stage==='done').length}/${p.tasks.length} done</div></div>
+            <span class="oh-pct ${gr?'oh-green':'oh-red'}">${pc}%</span>
+          </div>
+          <div class="oh-proj-b">`;
+        SUBS.forEach(([k,lb2])=>{const items=p.tasks.filter(t=>t.sub===k);
+          html+=`<div class="oh-subx"><div class="oh-sub-h">${lb2}<span>${items.filter(t=>t.stage==='done').length}/${items.length}</span></div>`;
+          if(!items.length)html+=`<div class="oh-sub-e">— none —</div>`;
+          else items.forEach(t=>{html+=`<div class="oh-sub-i ${t.stage==='done'?'dn':''}"><span class="oh-dot ${t.stage==='done'?'oh-d-done':'oh-d-open'}"></span><span class="tt">${esc(t.title)}</span><span class="oh-av oh-${t.who}" style="width:16px;height:16px;font-size:9px" title="${PEOPLE[t.who]}">${t.who}</span></div>`;});
+          html+=`</div>`;});
+        html+=`</div></div>`;
+      });
+    });
+    box.innerHTML=html;
+    box.querySelectorAll('.oh-proj').forEach(el=>{
+      el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});
+      el.addEventListener('dragleave',()=>el.classList.remove('over'));
+      el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');const d=e.dataTransfer.getData('text');if(d&&d.indexOf('inc:')===0)routeToProject(d.slice(4),el.dataset.proj);});
+    });
+  }
+  function card(x,opts){
+    const {t,p}=x;const c=CH[t.channel]||CH.wom;const db=dueBadge(t.due,t.stage);
+    const chip=opts.chip?`<span class="oh-stagechip s-${t.stage}">${STAGE_LABEL[t.stage]}</span>`:'';
+    return `<div class="oh-tk s-${t.stage}" ${opts.drag?'draggable="true"':''} data-task="${t.id}">
+      <div class="oh-tk-t">${esc(t.title)}</div>
+      <div class="oh-tk-p">▸ ${esc(p.name)}</div>
+      <div class="oh-tk-m">${chip}<span class="oh-src">${c[0]} ${esc(t.from||c[1])}</span><span class="oh-due ${db.cls}">${db.txt}</span><span class="oh-av oh-mini-av oh-${t.who}" data-assign="${t.id}" title="Assigned to ${PEOPLE[t.who]} — click to reassign">${t.who}</span></div>
+    </div>`;
+  }
+  function renderBoard(){
+    const box=$$('oh-wf');const F=fil();
+    const all=[];projects.forEach(p=>p.tasks.forEach(t=>{if(F==='all'||p.id===F)all.push({t,p});}));
+    $$('oh-wf-n').textContent=all.filter(x=>x.t.stage!=='done').length+' open';
+    if(groupBy==='project')return renderGrouped(all,box,'project');
+    if(groupBy==='agent')return renderGrouped(all,box,'agent');
+    // default: STATUS — Trello workflow columns, draggable to change status
+    let html='';
+    STAGES.forEach(([sk,sl])=>{
+      const items=all.filter(x=>x.t.stage===sk);
+      html+=`<section class="oh-wcol"><div class="oh-wh">${sl}<span class="n">${items.length}</span></div><div class="oh-wdrop" data-stage="${sk}">`;
+      items.forEach(x=>html+=card(x,{drag:true,chip:false}));
+      if(!items.length)html+=`<div class="oh-sub-e">drop here</div>`;
+      html+=`</div></section>`;
+    });
+    box.innerHTML=html;
+    box.querySelectorAll('.oh-tk').forEach(el=>el.addEventListener('dragstart',e=>{e.stopPropagation();e.dataTransfer.setData('text','task:'+el.dataset.task);}));
+    box.querySelectorAll('.oh-wdrop').forEach(el=>{
+      el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});
+      el.addEventListener('dragleave',()=>el.classList.remove('over'));
+      el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');const d=e.dataTransfer.getData('text');if(d&&d.indexOf('task:')===0)moveTask(d.slice(5),el.dataset.stage);});
+    });
+  }
+  function renderGrouped(all,box,mode){
+    let cols;
+    if(mode==='project'){
+      cols=projects.filter(p=>all.some(x=>x.p.id===p.id)).map(p=>({label:p.name,pct:pct(p),items:all.filter(x=>x.p.id===p.id)}));
+    }else{
+      const order=['J','T','A','R'];
+      const whos=[...new Set(all.map(x=>x.t.who))].sort((a,b)=>((order.indexOf(a)+1||99)-(order.indexOf(b)+1||99)));
+      cols=whos.map(w=>({who:w,label:PEOPLE[w]||w,items:all.filter(x=>x.t.who===w)}));
+    }
+    let html='';
+    cols.forEach(col=>{
+      const head=mode==='project'
+        ? `<span>${esc(col.label)}</span><span class="oh-pct ${col.pct===100?'oh-green':'oh-red'}">${col.pct}%</span>`
+        : `<span style="display:flex;align-items:center;gap:6px"><span class="oh-av oh-${col.who}" style="width:18px;height:18px;font-size:9px">${col.who}</span>${esc(col.label)}</span><span class="n">${col.items.length}</span>`;
+      html+=`<section class="oh-wcol"><div class="oh-wh">${head}</div><div class="oh-wdrop">`;
+      col.items.forEach(x=>html+=card(x,{drag:false,chip:true}));
+      if(!col.items.length)html+=`<div class="oh-sub-e">none</div>`;
+      html+=`</div></section>`;
+    });
+    box.innerHTML=html;
+  }
+  function routeToProject(incId,pid){
+    const i=incoming.find(x=>x.id===incId);if(!i||i.gone)return;const p=projects.find(x=>x.id===pid);if(!p)return;
+    i.gone=true;
+    const subMap={support:'support',web:'biz',email:'biz',phone:'admin',chat:'support',wom:'admin'};
+    const short=i.summary.length>44?i.summary.slice(0,42)+'…':i.summary;
+    p.tasks.push({id:'ot'+(++seq),title:i.name.split('(')[0].trim()+': '+short,sub:subMap[i.channel]||'admin',stage:'new',who:'J',due:null,channel:i.channel,from:i.name});
+    renderAll();const b=$$('oh-wf');if(b){b.classList.add('oh-flash');setTimeout(()=>b.classList.remove('oh-flash'),600);}
+  }
+  function moveTask(id,stage){const r=findTask(id);if(r&&r.t.stage!==stage){r.t.stage=stage;renderAll();}}
+  function cycleAssign(id){const r=findTask(id);if(!r)return;const o=['J','T','A','R'];r.t.who=o[(o.indexOf(r.t.who)+1)%4];renderBoard();}
+  function onClick(e){
+    const tg=e.target.closest('[data-toggle]');if(tg){tg.closest('.oh-proj').classList.toggle('col');return;}
+    const as=e.target.closest('[data-assign]');if(as){cycleAssign(as.dataset.assign);return;}
+  }
+  let inited=false;
+  window._opsInit=function(){ if(!inited){buildShell();renderAll();inited=true;} };
+})();
+
 updateTtsBtn();
 boot();
 </script></body></html>
