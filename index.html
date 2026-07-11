@@ -222,6 +222,30 @@ body.speaking #ttsStop{display:inline-flex;align-items:center}
 .oh-mini-av{width:19px;height:19px;font-size:9.5px;cursor:pointer}
 .oh-flash{animation:ohflash .6s ease}@keyframes ohflash{0%{background:rgba(200,162,75,.30)}100%{}}
 @media(max-width:900px){.oh-body{grid-template-columns:1fr;grid-auto-rows:minmax(200px,auto);overflow:auto}.oh-pane{border-right:0;border-bottom:1px solid var(--line)}}
+/* ===== BOARD POLISH v1 (2026-07-11) — uniform cards, themed scrollbars, tidy columns ===== */
+/* thin, themed scrollbars everywhere (replaces the clunky native ones) */
+*{scrollbar-width:thin;scrollbar-color:#333c4e transparent}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:#333c4e;border-radius:8px;border:2px solid var(--bg);background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:#465170}
+*::-webkit-scrollbar-corner{background:transparent}
+/* board: a touch more air; columns get a soft gradient + sticky headers */
+#board{padding:16px;gap:14px;grid-auto-columns:minmax(238px,1fr)}
+.col{border-radius:14px;background:linear-gradient(180deg,#171d28,#141924)}
+.col h2{position:sticky;top:0;z-index:2;align-items:center;padding:12px 13px;background:#171d28;border-top-left-radius:14px;border-top-right-radius:14px}
+.col .n{font-weight:700}
+.drop{gap:10px;padding:11px}
+.drop:empty::after{content:"— clear —";display:block;color:var(--mut);opacity:.45;font-size:11px;font-style:italic;text-align:center;padding:10px 2px}
+/* cards: uniform + tidy. Clamp long notes so a wall of text can't blow a card up. */
+.tk{padding:11px 12px;border-radius:11px;overflow-wrap:anywhere;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+.tk:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.32);border-color:#3a4560}
+.tk .id{opacity:.85}
+.tk .t{font-size:13.5px;line-height:1.35;margin:3px 0 8px}
+.tk .na,.tk .nt{line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.tk .na{color:#f0b7b7}
+.tag{font-weight:700;letter-spacing:.3px}
+.b-done{opacity:.58}.b-done:hover{opacity:.85}
 </style></head><body>
 
 <div id="login">
