@@ -545,16 +545,21 @@ function renderChat(){
 }
 
 /* ---- voice-to-text (STT) ---- */
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,recording=false;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,recording=false,userStop=false,micBase="",micFinal="";
+function micRender(interim){$("#prompt").value=(micBase+micFinal+(interim||"")).replace(/[ \t]+/g," ").replace(/^ /,"");}
+function micStart(){
+  rec=new SR();rec.lang="en-US";rec.interimResults=true;rec.continuous=true;
+  rec.onstart=()=>{recording=true;$("#micBtn").classList.add("rec");};
+  rec.onerror=ev=>{const er=ev&&ev.error;if(er==="not-allowed"||er==="service-not-allowed"){userStop=true;alert("Mic permission is blocked. Allow microphone access for this site, then tap the mic again.");}};
+  rec.onend=()=>{if(!userStop){try{rec.start();return;}catch(e){}}recording=false;$("#micBtn").classList.remove("rec");$("#prompt").focus();};
+  rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const tr=e.results[i][0].transcript;if(e.results[i].isFinal)micFinal+=tr+" ";else interim+=tr;}micRender(interim);};
+  try{rec.start();}catch(e){}
+}
 $("#micBtn").addEventListener("click",()=>{
   if(!SR){alert("Voice input isn’t supported on this browser — type instead. (On iPhone this can be hit-or-miss.)");return;}
-  if(recording){try{rec.stop();}catch(e){}return;}
-  rec=new SR();rec.lang="en-US";rec.interimResults=true;rec.continuous=false;let fin="";
-  rec.onstart=()=>{recording=true;$("#micBtn").classList.add("rec");};
-  rec.onerror=()=>{recording=false;$("#micBtn").classList.remove("rec");};
-  rec.onend=()=>{recording=false;$("#micBtn").classList.remove("rec");$("#prompt").focus();};
-  rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const tr=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=tr+" ";else interim+=tr;}$("#prompt").value=(fin+interim).trim();};
-  try{rec.start();}catch(e){}
+  if(recording){userStop=true;try{rec.stop();}catch(e){}return;}
+  micBase=($("#prompt").value||"");if(micBase&&!/\s$/.test(micBase))micBase+=" ";micFinal="";userStop=false;
+  micStart();
 });
 
 $("#msgs").addEventListener("click",e=>{
@@ -572,7 +577,7 @@ function autoGrowPrompt(){const t=$("#prompt");if(!t)return;t.style.height="auto
 $("#prompt").addEventListener("input",autoGrowPrompt);
 async function sendMsg(v){v=(v||"").trim();if(!v)return;await sb.from("jarvis_messages").insert({role:"user",content:v,handled:false});await load();}
 async function send(e){if(e)e.preventDefault();const v=$("#prompt").value.trim();if(!v)return;
-  if(recording){try{rec.stop();}catch(e){}}
+  if(recording){userStop=true;try{rec.stop();}catch(e){}}
   $("#prompt").value="";$("#prompt").style.height="";$("#sendBtn").disabled=true;
   await sendMsg(v);
   $("#sendBtn").disabled=false;}
