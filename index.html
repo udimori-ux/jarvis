@@ -691,42 +691,9 @@ function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":
   const STAGES=[['new','New'],['in_progress','In progress'],['review','Review'],['done','Done']];
   const STAGE_LABEL=Object.fromEntries(STAGES);
   let seq=900, groupBy='status';
-  let projects=[
-    {id:'p1',group:'lead',name:'Riverside Aquatics — New Contract',su:'Lead · warm',tasks:[
-      {id:'t101',title:'Draft proposal deck',sub:'biz',stage:'done',who:'J',due:'2026-06-28',channel:'email',from:'Riverside Aquatics'},
-      {id:'t102',title:'Send W-9 + certificate of insurance',sub:'admin',stage:'done',who:'T',due:'2026-06-29',channel:'email',from:'Riverside Aquatics'},
-      {id:'t103',title:'Follow-up call re: budget',sub:'biz',stage:'new',who:'J',due:'2026-07-02',channel:'phone',from:'Riverside Aquatics'}]},
-    {id:'p2',group:'lead',name:'Maple Grove HOA',su:'Lead · inbound',tasks:[
-      {id:'t201',title:'Site walk scheduling',sub:'admin',stage:'done',who:'T',due:'2026-06-30',channel:'email',from:'Marcus Bell'},
-      {id:'t202',title:'Prepare quote',sub:'biz',stage:'review',who:'J',due:'2026-07-01',channel:'email',from:'Marcus Bell'}]},
-    {id:'p3',group:'lead',name:'Downtown Fitness Center',su:'Lead · cold',tasks:[
-      {id:'t301',title:'Intro email sequence',sub:'biz',stage:'in_progress',who:'A',due:'2026-07-04',channel:'web',from:'Downtown Fitness'},
-      {id:'t302',title:'Add to CRM',sub:'admin',stage:'done',who:'T',due:'2026-06-27',channel:'web',from:'Downtown Fitness'},
-      {id:'t303',title:'Answer pricing question',sub:'support',stage:'new',who:'J',due:'2026-06-30',channel:'web',from:'Downtown Fitness'}]},
-    {id:'p4',group:'existing',name:'Lakeside Resort — Pool Service',su:'Existing · monthly',tasks:[
-      {id:'t401',title:'March invoice reconciliation',sub:'admin',stage:'done',who:'T',due:'2026-06-20',channel:'email',from:'Tom Reyes'},
-      {id:'t402',title:'Replace pump seal',sub:'support',stage:'done',who:'J',due:'2026-06-25',channel:'phone',from:'Tom Reyes'},
-      {id:'t403',title:'Upsell heater maintenance',sub:'biz',stage:'done',who:'R',due:'2026-06-26',channel:'phone',from:'Tom Reyes'},
-      {id:'t404',title:'Post seasonal closing notice',sub:'notices',stage:'done',who:'T',due:'2026-06-29',channel:'email',from:'—'}]},
-    {id:'p5',group:'existing',name:'Cedar Elementary School',su:'Existing · contract',tasks:[
-      {id:'t501',title:'Renew annual agreement',sub:'admin',stage:'done',who:'J',due:'2026-06-24',channel:'email',from:'—'},
-      {id:'t502',title:'Handle chemical smell complaint',sub:'support',stage:'in_progress',who:'T',due:'2026-07-01',channel:'chat',from:'Priya Nadig'},
-      {id:'t503',title:'Notify staff of maintenance window',sub:'notices',stage:'new',who:'T',due:'2026-07-05',channel:'email',from:'—'}]},
-    {id:'p6',group:'existing',name:'Sunset Condominiums',su:'Existing · retainer',tasks:[
-      {id:'t601',title:'Q2 water testing report',sub:'admin',stage:'in_progress',who:'J',due:'2026-07-03',channel:'email',from:'—'},
-      {id:'t602',title:'Board wants gym equipment quote',sub:'biz',stage:'new',who:'R',due:'2026-07-08',channel:'chat',from:'—'},
-      {id:'t603',title:'Leak in filtration room',sub:'support',stage:'review',who:'J',due:'2026-07-02',channel:'phone',from:'Karen Whitfield'},
-      {id:'t604',title:'Post pool hours change',sub:'notices',stage:'done',who:'T',due:'2026-06-30',channel:'email',from:'—'}]}
-  ];
-  let incoming=[
-    {id:'i1',channel:'phone',name:'Karen Whitfield',summary:'Cloudy pool at Sunset Condos — wants someone out this week.',time:'8m',projectId:'p6'},
-    {id:'i2',channel:'email',name:'Marcus Bell (Maple Grove HOA)',summary:'Replied to the quote, asking if we can start before month-end.',time:'22m',projectId:'p2'},
-    {id:'i3',channel:'web',name:'Downtown Fitness Center',summary:'Web form: pricing for weekly commercial pool service.',time:'40m',projectId:'p3'},
-    {id:'i4',channel:'chat',name:'Priya Nadig',summary:'Chemical smell complaint at Cedar Elementary, parents concerned.',time:'1h',projectId:'p5'},
-    {id:'i5',channel:'phone',name:'Tom Reyes (Lakeside Resort)',summary:'Happy with service, wants to add hot tub maintenance.',time:'2h',projectId:'p4'},
-    {id:'i6',channel:'email',name:'Riverside Aquatics',summary:'Following up on the proposal deck, wants a budget call.',time:'3h',projectId:'p1'}
-  ];
-  const FILTERED=3;
+  let projects=[];       // (removed placeholder sample projects — this view will fill in once wired to real leads/jobs)
+  let incoming=[];       // (removed placeholder sample comms)
+  const FILTERED=0;
   const $$=s=>document.getElementById(s);
   const fil=()=>{const f=$$('oh-filter');return f?f.value:'all';};
   const projName=id=>{const p=projects.find(x=>x.id===id);return p?p.name:'Unrouted';};
@@ -744,7 +711,7 @@ function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":
   function buildShell(){
     $$('opshub').innerHTML=`
       <div class="oh-top">
-        <h2>🗂 Ops Hub <span class="sub">comms → route to a project → task → workflow · sample data</span></h2>
+        <h2>🗂 Ops Hub <span class="sub">comms → route to a project → task → workflow · preview (not yet wired to live data)</span></h2>
         <select class="oh-sel" id="oh-filter"><option value="all">All projects</option></select>
         <div class="oh-groupby" id="oh-groupby">
           <span class="ohg-lbl">Group by</span>
@@ -796,13 +763,14 @@ function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":
           <div class="oh-inc-proj">▸ drag onto ${esc(projName(i.projectId))} →</div>
         </div>`;});
     });
-    if(!act.length)html=`<div class="oh-sub-e">Inbox zero — every comm routed to a project.</div>`;
+    if(!act.length)html=`<div class="oh-sub-e">No incoming comms yet.</div>`;
     html+=`<div class="oh-note">⌀ ${FILTERED} bank / junk items auto-filtered out</div>`;
     box.innerHTML=html;
     box.querySelectorAll('.oh-inc').forEach(el=>el.addEventListener('dragstart',e=>e.dataTransfer.setData('text','inc:'+el.dataset.inc)));
   }
   function renderTree(){
     const box=$$('oh-tree');$$('oh-proj-n').textContent=projects.length;
+    if(!projects.length){box.innerHTML=`<div class="oh-sub-e">No projects yet. This is a preview of the comms → project → task workflow; it fills in once wired to real leads and jobs.</div>`;return;}
     let html='';
     [['lead','Leads'],['existing','Existing Projects']].forEach(([g,lb])=>{
       html+=`<div class="oh-grp">${lb}</div>`;
